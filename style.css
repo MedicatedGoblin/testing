@@ -301,6 +301,7 @@ tbody tr {
 .pick-number-box {
   text-decoration: none !important;
 }
+
 }
 .pick-number-box {
   text-decoration: none !important;
@@ -310,86 +311,115 @@ tbody tr {
   body {
     padding: 1rem;
   }
-
-  /* Center the table */
   table {
     margin: 0 auto;
     width: 100% !important;
-    table-layout: fixed; /* Fix column widths */
+    table-layout: fixed;
     font-size: 14px;
   }
-
-  /* Prevent wide columns, allow wrapping */
   th, td {
     padding: 8px 10px;
     word-wrap: break-word;
-    white-space: normal; /* allow wrapping */
+    white-space: normal;
   }
-
-  /* Limit Drafted By column width and allow wrapping */
   th:nth-child(6),
   td:nth-child(6) {
     max-width: 120px;
   }
-
-  /* Optionally, hide Tag column (since you wanted to remove it) */
   th:nth-child(4),
   td:nth-child(4) {
     display: none;
   }
 }
 
-/* --- Tier Divider & Arrow Styles --- */
-.tier-divider-tr {
-  background: none !important;
-  border: none !important;
+/* --- DYNAMIC TIERS & BUTTONS --- */
+.plus-row-td {
+  background: #f8f9fa;
+  text-align: center;
+  padding: 4px 0;
 }
-.tier-divider-td {
-  padding: 0 !important;
-  border: none !important;
+.plus-divider-btn {
+  background: #eee;
+  border: 1.5px solid #bbb;
+  border-radius: 50%;
+  color: #1976d2;
+  font-weight: bold;
+  font-size: 1.15em;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  margin: 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .18s, box-shadow .18s;
 }
+.plus-divider-btn:hover {
+  background: #cde1fd;
+  box-shadow: 0 2px 6px #1976d233;
+}
+
 .tier-divider-bar {
-  width: 100%;
   display: flex;
   align-items: center;
-  gap: 1.2rem;
-  margin: 0.5rem 0 0.5rem 0;
+  justify-content: flex-start;
+  height: 22px;
+  margin-bottom: 0;
 }
 .tier-divider-bar-inner {
-  flex: 1;
-  height: 4px;
+  width: 96%;
+  height: 7px;
   background: #1976d2;
-  border-radius: 4px;
-  margin-right: 1rem;
+  border-radius: 8px;
+  margin-right: 14px;
+  box-shadow: 0 2px 8px #1976d233;
 }
 .tier-divider-label {
-  font-weight: bold;
-  font-size: 1.08rem;
+  margin-left: 2px;
+  font-weight: 800;
   color: #1976d2;
-  background: #e3ecfa;
+  font-size: 1em;
+  letter-spacing: 1px;
+}
+.remove-tier-btn {
+  margin-left: 9px;
+  color: #b6181e;
+  background: #fcecec;
+  border: 1.5px solid #ffdadb;
   border-radius: 10px;
-  padding: 2px 14px;
-  margin-left: 0;
-  letter-spacing: 0.5px;
+  font-size: 1.12em;
+  font-weight: bold;
+  width: 20px;
+  height: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background .13s, box-shadow .18s;
+}
+.remove-tier-btn:hover {
+  background: #ffd6d6;
+  border-color: #b6181e;
 }
 .player-tier-arrow {
-  background: #f1f1f1;
-  border: none;
+  background: #f4f7fa;
   color: #1976d2;
-  font-size: 1rem;
-  border-radius: 4px;
-  margin-right: 5px;
-  padding: 2px 6px;
+  border: 1.2px solid #aac7ed;
+  border-radius: 3px;
+  font-weight: 900;
+  font-size: 0.95em;
+  margin: 0 3px 0 0;
+  padding: 1px 6px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
   vertical-align: middle;
+  box-shadow: 0 1px 3px #1976d233;
+  transition: background .16s, box-shadow .12s;
 }
 .player-tier-arrow:disabled {
-  color: #bbb;
-  background: #eee;
+  background: #e2e6eb;
+  color: #b4c5d6;
+  border-color: #e2e6eb;
   cursor: not-allowed;
 }
-.player-tier-arrow:hover:not(:disabled) {
-  background: #dce9fa;
-  color: #004baa;
+.player-tier-arrow:hover:enabled {
+  background: #d3e7fc;
+  box-shadow: 0 2px 6px #1976d255;
 }
