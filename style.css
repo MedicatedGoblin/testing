@@ -354,7 +354,7 @@ tbody tr {
   display: flex;
   align-items: center;
   margin: 0;
-  justify-content: flex-end; /* label to right */
+  justify-content: flex-start; /* label on left */
 }
 .tier-divider-label {
   font-size: 0.95em;
@@ -363,25 +363,28 @@ tbody tr {
   background: #1976d2;
   border-radius: 6px;
   padding: 2px 14px 2px 10px;
-  margin-right: 8px;
-  margin-left: 0;
+  margin-left: 8px;
+  margin-right: 0;
   position: relative;
-  right: 0;
-  top: -18px;
+  left: 0;
+  top: 0; /* On the line */
   z-index: 2;
   line-height: 1.3;
   letter-spacing: 0.6px;
   box-shadow: 0 1px 8px #1976d245;
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  height: 24px;
 }
+
 .tier-divider-controls {
   display: inline-flex;
   gap: 5px;
-  margin-right: 0;
+  margin-left: 12px;
   align-items: center;
-  position: absolute;
-  right: 8px;
-  top: -22px;
+  position: relative;
+  top: 0;
 }
 .tier-divider-controls button {
   background: #1566bb;
@@ -425,7 +428,7 @@ tbody tr {
 .add-tier-plus {
   display: inline-block;
   position: absolute;
-  right: 16px;
+  left: 16px;
   top: -10px;
   width: 22px;
   height: 22px;
