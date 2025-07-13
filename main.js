@@ -1,5 +1,3 @@
-console.log("main.js loaded!"); // Diagnostic marker
-
 let players = [];
 let currentFilter = "ALL";
 let draftOrder = [];
