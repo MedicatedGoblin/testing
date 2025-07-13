@@ -2,75 +2,73 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Fantasy Draft Tool</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fantasy Draft Board</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
-<h2>Fantasy Draft Board</h2>
-
-<div class="controls">
-  <input type="file" id="fileInput" accept=".txt" />
-  <button id="submitFileBtn">Submit File</button>
-  <button id="removeFileBtn" disabled>Remove File</button>
-  <input type="text" id="searchInput" placeholder="Search players..." />
-  <button onclick="filterByPosition('ALL')">ALL</button>
-  <button onclick="filterByPosition('RB')">RB</button>
-  <button onclick="filterByPosition('WR')">WR</button>
-  <button onclick="filterByPosition('QB')">QB</button>
-  <button onclick="filterByPosition('TE')">TE</button>
-  <label><input type="checkbox" id="hidePickedCheckbox" onchange="renderTable()" /> Hide Picked</label>
-  <button onclick="resetAll()">Reset All</button>
-</div>
-
-<div class="controls team-section">
-  <div class="team-names">
-    <label>Number of Teams:
-      <select id="teamCount"></select>
-    </label>
-    <div id="teamNames"></div>
+  <h2>Fantasy Draft Board</h2>
+  <div class="controls">
+    <input type="file" id="fileInput" accept=".txt" />
+    <button id="submitFileBtn">Submit File</button>
+    <button id="removeFileBtn" disabled>Remove File</button>
+    <input type="text" id="searchInput" placeholder="Search players..." />
+    <button onclick="filterByPosition('ALL')">ALL</button>
+    <button onclick="filterByPosition('RB')">RB</button>
+    <button onclick="filterByPosition('WR')">WR</button>
+    <button onclick="filterByPosition('QB')">QB</button>
+    <button onclick="filterByPosition('TE')">TE</button>
+    <label><input type="checkbox" id="hidePickedCheckbox" onchange="renderTable()" /> Hide Picked</label>
+    <button onclick="resetAll()">Reset All</button>
   </div>
-  <div class="team-config">
-    <label>Choose Your Team:
-      <select id="yourTeamSelect"></select>
-    </label>
-    <label>Your Team Pick Number:
-      <select id="myPickIndex" disabled></select>
-    </label>
-    <button id="startDraftBtn" onclick="setupDraft()" disabled>Start Draft</button>
-    <div id="currentPickDisplay" style="margin-top: 0.5rem;"></div>
+
+  <div class="edit-toolbar">
+    <button id="editTiersBtn">Edit</button>
+    <button id="doneTiersBtn" style="display:none;">Done</button>
+    <button id="addTierModeBtn" style="display:none;">Add Tier</button>
+    <button id="cancelAddTierBtn" style="display:none;">Cancel Add</button>
   </div>
-</div>
 
-<!-- Edit Tiers button -->
-<div class="edit-tiers-controls">
-  <button id="editTiersBtn" type="button">Edit Tiers</button>
-  <button id="doneTiersBtn" type="button" style="display:none;">Done</button>
-</div>
+  <div class="controls team-section">
+    <div class="team-names">
+      <label>Number of Teams:
+        <select id="teamCount"></select>
+      </label>
+      <div id="teamNames"></div>
+    </div>
+    <div class="team-config">
+      <label>Choose Your Team:
+        <select id="yourTeamSelect"></select>
+      </label>
+      <label>Your Team Pick Number:
+        <select id="myPickIndex" disabled></select>
+      </label>
+      <button id="startDraftBtn" onclick="setupDraft()" disabled>Start Draft</button>
+      <div id="currentPickDisplay" style="margin-top: 0.5rem;"></div>
+    </div>
+  </div>
 
-<h3>Your Picks</h3>
-<div class="my-picks">
-  <div><strong>QB</strong><ul id="myQB"></ul></div>
-  <div><strong>RB</strong><ul id="myRB"></ul></div>
-  <div><strong>WR</strong><ul id="myWR"></ul></div>
-  <div><strong>TE</strong><ul id="myTE"></ul></div>
-</div>
+  <h3>Your Picks</h3>
+  <div class="my-picks">
+    <div><strong>QB</strong><ul id="myQB"></ul></div>
+    <div><strong>RB</strong><ul id="myRB"></ul></div>
+    <div><strong>WR</strong><ul id="myWR"></ul></div>
+    <div><strong>TE</strong><ul id="myTE"></ul></div>
+  </div>
 
-<table id="playerTable">
-  <thead>
-    <tr>
-      <th>✔</th>
-      <th>#</th>
-      <th></th> <!-- Arrows column -->
-      <th>Name</th>
-      <th>Position</th>
-      <th>Drafted By</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-
-<script src="main.js"></script>
+  <table id="playerTable">
+    <thead>
+      <tr>
+        <th>✔</th>
+        <th>#</th>
+        <th></th>
+        <th>Name</th>
+        <th>Position</th>
+        <th>Drafted By</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <script src="main.js"></script>
 </body>
 </html>
