@@ -57,20 +57,19 @@ function renderTable() {
   for (let t = 0; t < tierBreaks.length - 1; t++) {
     // ---- Slim blue tier line ----
     let tierLabel = `Tier ${t + 1}`;
-    // Blue slim line with right label
+    // Blue slim line with left label
     const trDivider = document.createElement("tr");
     trDivider.className = "tier-divider-tr";
     const tdDivider = document.createElement("td");
     tdDivider.className = "tier-divider-td";
-    tdDivider.colSpan = 6;
-
+    tdDivider.colSpan = 6; // Update this to match your table columns
     const tierLine = document.createElement("div");
     tierLine.className = "tier-divider-line";
-    // Label (now at right side of bar)
+    // Label ON the line, left
     const label = document.createElement("span");
     label.className = "tier-divider-label";
     label.textContent = tierLabel;
-
+    tierLine.appendChild(label);
     // Controls: only in edit mode, not for Tier 1 (locked)
     if (editingTiers && t > 0) {
       const controls = document.createElement("span");
@@ -89,16 +88,17 @@ function renderTable() {
       downBtn.onclick = e => { e.stopPropagation(); moveTier(t, 1); };
       downBtn.disabled = t >= tierBreaks.length - 2;
       controls.appendChild(downBtn);
-      // Remove (red X)
-      const delBtn = document.createElement("button");
-      delBtn.title = "Delete this tier";
-      delBtn.className = "remove-tier-btn";
-      delBtn.innerHTML = "×";
-      delBtn.onclick = e => { e.stopPropagation(); removeTier(t); };
-      controls.appendChild(delBtn);
+      // Remove (cannot remove if only 2 breaks remain)
+      if (tierBreaks.length > 3) {
+        const rmBtn = document.createElement("button");
+        rmBtn.className = "remove-tier-btn";
+        rmBtn.title = "Remove tier";
+        rmBtn.innerHTML = "×";
+        rmBtn.onclick = e => { e.stopPropagation(); removeTier(t); };
+        controls.appendChild(rmBtn);
+      }
       tierLine.appendChild(controls);
     }
-    tierLine.appendChild(label); // label to the right
     tdDivider.appendChild(tierLine);
     trDivider.appendChild(tdDivider);
     tableBody.appendChild(trDivider);
@@ -250,9 +250,10 @@ function removeTier(idx) {
 
 function movePlayer(i, dir) {
   // dir: -1 (up), +1 (down)
-  if (i + dir < 0 || i + dir >= players.length) return;
+  const visiblePlayers = getVisiblePlayers();
+  if (i + dir < 0 || i + dir >= visiblePlayers.length) return;
   // Move in main players array, so ordering is persistent
-  const idx = players.findIndex(p => p.id === getVisiblePlayers()[i].id);
+  const idx = players.findIndex(p => p.id === visiblePlayers[i].id);
   if (idx < 0 || idx + dir < 0 || idx + dir >= players.length) return;
   const temp = players[idx];
   players[idx] = players[idx + dir];
@@ -274,8 +275,10 @@ document.getElementById('addTierModeBtn').addEventListener('click', function() {
 });
 
 // --------- Other unchanged logic ---------
-// ...The rest of your fantasy draft, file, and draft management code goes here...
-// (no change to player drafting, file load, search, team selection, etc.)
+// (Draft, file, and team management functions go here; unchanged from previous good version.)
+
+// Example: Validate, Setup Draft, Save/Load, etc.
+// ... your original code for setupDraft(), validateStartDraftButton(), handleFileSubmit(), etc ...
 
 // --------- INIT -----------
 populateTeamCountOptions();
