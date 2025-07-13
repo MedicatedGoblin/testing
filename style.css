@@ -129,11 +129,11 @@ tbody tr.strikethrough {
 
 tbody tr.highlight {
   background-color: #ffeb3b !important; /* Bright solid yellow */
-  color: #000; /* Pure black text for max contrast */
+  color: #000;
   font-weight: 900;
-  border-left: 8px solid #fdd835; /* Strong gold accent */
+  border-left: 8px solid #fdd835;
   text-shadow: none;
-  box-shadow: 0 0 0 3px #fbc02d; /* Solid bold outline */
+  box-shadow: 0 0 0 3px #fbc02d;
   transform: scale(1.01);
 }
 tbody tr.highlight:hover {
@@ -301,7 +301,6 @@ tbody tr {
 .pick-number-box {
   text-decoration: none !important;
 }
-
 }
 .pick-number-box {
   text-decoration: none !important;
@@ -359,39 +358,50 @@ tbody tr {
   box-shadow: 0 2px 6px #1976d233;
 }
 
+/* ---- COMPACT TIER DIVIDER ROW ---- */
+.tier-divider-tr {
+  height: 16px !important;
+}
+.tier-divider-td {
+  padding: 0 !important;
+  background: #f8fafd;
+}
 .tier-divider-bar {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  height: 22px;
-  margin-bottom: 0;
+  height: 14px;
+  margin: 0;
+  padding: 0;
 }
 .tier-divider-bar-inner {
-  width: 96%;
-  height: 7px;
+  width: 90%;
+  height: 3.5px;
   background: #1976d2;
-  border-radius: 8px;
-  margin-right: 14px;
-  box-shadow: 0 2px 8px #1976d233;
+  border-radius: 6px;
+  margin-right: 6px;
+  box-shadow: 0 1px 3px #1976d233;
 }
 .tier-divider-label {
   margin-left: 2px;
   font-weight: 800;
   color: #1976d2;
-  font-size: 1em;
-  letter-spacing: 1px;
+  font-size: 0.67em;
+  letter-spacing: 0.5px;
+  line-height: 1;
+  padding: 0 3px;
 }
 .remove-tier-btn {
-  margin-left: 9px;
+  margin-left: 6px;
   color: #b6181e;
   background: #fcecec;
-  border: 1.5px solid #ffdadb;
-  border-radius: 10px;
-  font-size: 1.12em;
+  border: 1px solid #ffdadb;
+  border-radius: 7px;
+  font-size: 0.8em;
   font-weight: bold;
-  width: 20px;
-  height: 20px;
+  width: 15px;
+  height: 15px;
   line-height: 1;
+  padding: 0;
   cursor: pointer;
   transition: background .13s, box-shadow .18s;
 }
