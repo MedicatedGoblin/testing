@@ -1,5 +1,3 @@
-console.log("main.js loaded! (player tier model, 5 per tier)");
-
 let players = [];
 let currentFilter = "ALL";
 let draftOrder = [];
@@ -174,9 +172,7 @@ function handleFileSubmit() {
   reader.onload = e => {
     const lines = e.target.result.split("\n").filter(line => line.trim());
 
-    // --- 5 players per tier: [4, 9, 14, 19] (indexes) ---
-    const breaks = [4, 9, 14, 19];
-
+    // --- 5 players per tier: Tier 1 = 0-4, Tier 2 = 5-9, Tier 3 = 10-14, etc. ---
     players = lines.map((line, index) => {
       const parts = line.trim().split(/\s+/);
       const tag = parts.pop();
@@ -188,11 +184,8 @@ function handleFileSubmit() {
         else if (tag.includes("QB")) position = "QB";
         else if (tag.includes("TE")) position = "TE";
       }
-      // Assign tier by index
-      let tier = 1;
-      for (let i = 0; i < breaks.length; i++) {
-        if (index > breaks[i]) tier++;
-      }
+      // Assign tier by index (0-based)
+      let tier = Math.floor(index / 5) + 1;
       if (tier > NUM_TIERS) tier = NUM_TIERS;
       return {
         id: index + 1,
