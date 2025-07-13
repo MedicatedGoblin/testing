@@ -5,8 +5,9 @@ let currentPick = 0;
 let teamNames = [];
 let myTeamIndex = -1;
 
-const NUM_TIERS = 6; // Number of breaks (e.g., 6 breaks => 5 tiers)
-let tierBreaks = []; // e.g., [1, 5, 10, 15, 20, 25] (positions between players)
+// Tiers as break indexes (positions BETWEEN players)
+const NUM_TIERS = 6; // 6 breaks, which means 5 tiers
+let tierBreaks = []; // e.g., [1,5,10,15,20,25]; index positions in visiblePlayers
 
 const fileInput = document.getElementById("fileInput");
 const submitFileBtn = document.getElementById("submitFileBtn");
@@ -61,6 +62,7 @@ function renderTable() {
   for (let i = 0; i <= visiblePlayers.length; i++) {
     // Insert divider *before* player if this index is a tier break (except index 0)
     if (tierBreaks.includes(i) && i !== 0) {
+      // Insert thin tier divider
       const tr = document.createElement("tr");
       tr.className = "tier-divider-tr";
       tr.dataset.tierIndex = tierNum;
@@ -68,6 +70,7 @@ function renderTable() {
       td.className = "tier-divider-td";
       td.colSpan = 5;
 
+      // The blue bar and label
       const bar = document.createElement("div");
       bar.className = "tier-divider-bar";
       const barInner = document.createElement("div");
@@ -83,9 +86,11 @@ function renderTable() {
       tr.appendChild(td);
       tableBody.appendChild(tr);
       tierDivRows.push({ tr, label, idx: i, tierNum });
+
       tierNum++;
     }
     if (i < visiblePlayers.length) {
+      // Add the player row
       const player = visiblePlayers[i];
       const tr = document.createElement("tr");
       tr.classList.add(player.position);
@@ -131,6 +136,7 @@ function renderTable() {
 
       tableBody.appendChild(tr);
 
+      // "My picks" lists
       if (player.draftedBy === teamNames[myTeamIndex]) {
         const li = document.createElement("li");
         li.textContent = `${player.name} (${player.tag})`;
@@ -147,10 +153,11 @@ function renderTable() {
       return;
     }
     label.setAttribute("draggable", "true");
+
     label.ondragstart = (e) => {
       dragIdx = idx;
       label.classList.add("dragging");
-      // Custom ghost
+      // Ghost blue bar
       const ghost = document.createElement("div");
       ghost.style.width = "100px";
       ghost.style.height = "10px";
@@ -162,6 +169,7 @@ function renderTable() {
       e.dataTransfer.setDragImage(ghost, 50, 5);
       setTimeout(() => document.body.removeChild(ghost), 0);
     };
+
     label.ondragend = () => {
       dragIdx = null;
       label.classList.remove("dragging");
@@ -174,6 +182,7 @@ function renderTable() {
     };
   });
 
+  // Allow drop between any two players
   let trList = Array.from(tableBody.querySelectorAll("tr"));
   trList.forEach((row, i) => {
     if (row.classList.contains("tier-divider-tr")) {
@@ -193,7 +202,7 @@ function renderTable() {
         if (dragIdx === null) return;
         const allBreaks = [...tierBreaks];
         const thisIdx = tierDivRows.find(tierRow => tierRow.tr === row).idx;
-        if (thisIdx === dragIdx) return;
+        if (thisIdx === dragIdx) return; // No-op
         const idxList = tierDivRows.map(t => t.idx);
         let dragPos = idxList.indexOf(dragIdx);
         let dropPos = idxList.indexOf(thisIdx);
@@ -272,8 +281,106 @@ function clearFileInput() {
   fileInput.value = "";
 }
 
-// ---- The rest of your unchanged draft/team code below ----
-// ... populateTeamCountOptions, generateTeamNameInputs, etc (as in your working version) ...
+function populateTeamCountOptions() {
+  const options = [10, 8, 12, 14];
+  teamCountSelect.innerHTML = "";
+  options.forEach(num => {
+    const option = document.createElement("option");
+    option.value = num;
+    option.textContent = num;
+    teamCountSelect.appendChild(option);
+  });
+}
+
+function generateTeamNameInputs() {
+  const teamCount = parseInt(teamCountSelect.value, 10);
+  teamNamesContainer.innerHTML = "";
+  for (let i = 0; i < teamCount; i++) {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.id = `teamName${i}`;
+    input.placeholder = `Team ${i + 1}`;
+    input.value = teamNames[i] || "";
+    input.addEventListener("input", () => {
+      teamNames[i] = input.value.trim();
+      syncYourTeamSelectOptions();
+      saveAll();
+      validateStartDraftButton();
+    });
+    teamNamesContainer.appendChild(input);
+    teamNamesContainer.appendChild(document.createElement("br"));
+  }
+}
+
+function syncYourTeamSelectOptions() {
+  const prevValue = yourTeamSelect.value;
+  yourTeamSelect.innerHTML = '<option value="" disabled selected>-- Select Team --</option>';
+  teamNames = teamNames.map(name => name.trim());
+  const teamCount = parseInt(teamCountSelect.value, 10);
+
+  for (let i = 0; i < teamCount; i++) {
+    const name = teamNames[i] || "";
+    if (name) {
+      const option = document.createElement("option");
+      option.value = i;
+      option.textContent = name;
+      yourTeamSelect.appendChild(option);
+    }
+  }
+
+  if (!yourTeamSelect.querySelector(`option[value="${prevValue}"]`)) {
+    yourTeamSelect.value = "";
+    myTeamIndex = -1;
+    myPickSelect.innerHTML = "";
+    myPickSelect.disabled = true;
+  } else {
+    yourTeamSelect.value = prevValue;
+    if (prevValue !== "") {
+      myTeamIndex = parseInt(prevValue, 10);
+      myPickSelect.innerHTML = "";
+      const option = document.createElement("option");
+      option.value = myTeamIndex + 1;
+      option.textContent = myTeamIndex + 1;
+      myPickSelect.appendChild(option);
+      myPickSelect.value = option.value;
+      myPickSelect.disabled = true;
+    }
+  }
+}
+
+yourTeamSelect.addEventListener("change", () => {
+  const val = yourTeamSelect.value;
+  if (val === "") {
+    myTeamIndex = -1;
+    myPickSelect.innerHTML = "";
+    myPickSelect.disabled = true;
+  } else {
+    myTeamIndex = parseInt(val, 10);
+    myPickSelect.innerHTML = "";
+    const option = document.createElement("option");
+    option.value = myTeamIndex + 1;
+    option.textContent = myTeamIndex + 1;
+    myPickSelect.appendChild(option);
+    myPickSelect.value = option.value;
+    myPickSelect.disabled = true;
+  }
+  saveAll();
+  renderTable();
+  validateStartDraftButton();
+});
+
+teamCountSelect.addEventListener("change", () => {
+  saveAll();
+  generateTeamNameInputs();
+  syncYourTeamSelectOptions();
+  validateStartDraftButton();
+});
+
+// Add your toggleDrafted, saveAll, loadAll, filterByPosition, updateCurrentPickDisplay, validateStartDraftButton, setupDraft from your previous code below here
+// --- INSERT ALL YOUR EXISTING "HELPER" FUNCTIONS HERE ---
+// For brevity, I won’t repeat them unless you want me to paste everything out, but you must keep ALL these.
+
+
 // --- INIT ---
 populateTeamCountOptions();
 generateTeamNameInputs();
