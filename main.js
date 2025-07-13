@@ -1,5 +1,3 @@
-// MAIN.JS -- Clean, Animated Tier System with Hover "Add Tier" Bars
-
 let players = [];
 let currentFilter = "ALL";
 let draftOrder = [];
@@ -7,7 +5,8 @@ let currentPick = 0;
 let teamNames = [];
 let myTeamIndex = -1;
 
-let tierBreaks = []; // stores player index where each tier starts (first tier always at 0)
+let tierBreaks = [];
+let editingTiers = false; // new: edit mode flag
 
 const fileInput = document.getElementById("fileInput");
 const submitFileBtn = document.getElementById("submitFileBtn");
@@ -20,6 +19,8 @@ const myPickSelect = document.getElementById("myPickIndex");
 const startDraftBtn = document.getElementById("startDraftBtn");
 const currentPickDisplay = document.getElementById("currentPickDisplay");
 const teamNamesContainer = document.getElementById("teamNames");
+const editTiersBtn = document.getElementById("editTiersBtn");
+const doneTiersBtn = document.getElementById("doneTiersBtn");
 
 function getVisiblePlayers() {
   const keyword = searchInput.value.toLowerCase();
@@ -53,11 +54,10 @@ function renderTable() {
   document.getElementById("myWR").innerHTML = "";
   document.getElementById("myTE").innerHTML = "";
 
-  // For each tier, render divider, players in tier, and add-tier-bar after each player row
   for (let t = 0; t < tierBreaks.length - 1; t++) {
     // Draw tier bar
     const tierRow = document.createElement("tr");
-    tierRow.className = "tier-divider-tr";
+    tierRow.className = "tier-divider-tr" + (editingTiers ? " editing" : "");
     const tierTd = document.createElement("td");
     tierTd.colSpan = 6;
     tierTd.className = "tier-divider-td";
@@ -67,8 +67,8 @@ function renderTable() {
     label.textContent = `TIER ${t+1}`;
     tierTd.appendChild(label);
 
-    // Remove button (not for Tier 1)
-    if (t > 0) {
+    // Remove button (not for Tier 1), only show in edit mode
+    if (editingTiers && t > 0) {
       const removeBtn = document.createElement("button");
       removeBtn.className = "remove-tier-btn";
       removeBtn.title = "Remove this tier";
@@ -102,7 +102,7 @@ function renderTable() {
       cb.addEventListener("change", () => { toggleDrafted(player.id); });
       cbCell.appendChild(cb);
 
-      // Number (update dynamically)
+      // Number
       const numCell = document.createElement("td");
       numCell.textContent = (i+1);
 
@@ -162,43 +162,25 @@ function renderTable() {
         document.getElementById("my" + player.position).appendChild(li);
       }
 
-      // --- ADD TIER BAR (HIDDEN BY DEFAULT, SHOWS ON HOVER) ---
-      // Don't allow add after last player in last tier
-      if (!(t === tierBreaks.length-2 && i === tierBreaks[t+1]-1)) {
+      // --- ADD TIER BAR ---
+      if (editingTiers && !(t === tierBreaks.length-2 && i === tierBreaks[t+1]-1)) {
         const addTierTr = document.createElement("tr");
         addTierTr.className = "add-tier-row";
         const addTierTd = document.createElement("td");
         addTierTd.colSpan = 6;
-        // Add Tier Bar (hidden, shown only on hover)
         const addTierBar = document.createElement("div");
-        addTierBar.className = "add-tier-bar";
+        addTierBar.className = "add-tier-bar editing";
         addTierBar.innerHTML = `<span class="add-tier-label">&#43; Add Tier Here</span>`;
         addTierBar.onclick = (e) => { e.stopPropagation(); insertTierAt(i+1); };
         addTierTd.appendChild(addTierBar);
         addTierTr.appendChild(addTierTd);
         tableBody.appendChild(addTierTr);
-
-        // Show add bar when mouse is over the player row above
-        tr.addEventListener("mouseenter", () => {
-          addTierBar.classList.add("show");
-        });
-        tr.addEventListener("mouseleave", () => {
-          addTierBar.classList.remove("show");
-        });
-        // Also show when mouse hovers the addTierBar itself
-        addTierBar.addEventListener("mouseenter", () => {
-          addTierBar.classList.add("show");
-        });
-        addTierBar.addEventListener("mouseleave", () => {
-          addTierBar.classList.remove("show");
-        });
       }
     }
   }
 }
 
 function insertTierAt(idx) {
-  // Insert a new break at idx if not already a tier start
   if (!tierBreaks.includes(idx) && idx > 0 && idx < getVisiblePlayers().length) {
     tierBreaks.push(idx);
     tierBreaks.sort((a,b) => a-b);
@@ -206,27 +188,20 @@ function insertTierAt(idx) {
   }
 }
 function removeTierAt(tierIdx) {
-  // Remove tier at tierIdx (cannot remove Tier 1)
   if (tierIdx === 0) return;
   tierBreaks.splice(tierIdx, 1);
   renderTable();
 }
 function movePlayer(fromIdx, toIdx) {
   if (toIdx < 0 || toIdx >= getVisiblePlayers().length) return;
-  // Move in 'players' not just visiblePlayers!
   const visible = getVisiblePlayers();
   const fromPlayer = visible[fromIdx];
   const toPlayer = visible[toIdx];
   const fromGlobal = players.findIndex(p => p.id === fromPlayer.id);
   const toGlobal = players.findIndex(p => p.id === toPlayer.id);
-  // Swap
   [players[fromGlobal], players[toGlobal]] = [players[toGlobal], players[fromGlobal]];
   renderTable();
 }
-
-// ========== Your unchanged original logic below =============
-
-// ... (populateTeamCountOptions, generateTeamNameInputs, etc.)
 
 function toggleDrafted(id) {
   const player = players.find(p => p.id === id);
@@ -382,7 +357,7 @@ function handleFileSubmit() {
 
     currentPick = 0;
     draftOrder = [];
-    tierBreaks = []; // reset
+    tierBreaks = [];
     saveAll();
     renderTable();
     updateCurrentPickDisplay();
@@ -505,7 +480,6 @@ teamCountSelect.addEventListener("change", () => {
   validateStartDraftButton();
 });
 
-// Validate if draft can start (all teams named, your team selected, file submitted)
 function validateStartDraftButton() {
   let valid = true;
   fileInput.classList.remove("error");
@@ -513,7 +487,6 @@ function validateStartDraftButton() {
   startDraftBtn.classList.remove("error");
   yourTeamSelect.classList.remove("error");
 
-  // Validate team names: all must be non-empty
   const teamCount = parseInt(teamCountSelect.value, 10);
   let teamsValid = true;
   for (let i = 0; i < teamCount; i++) {
@@ -574,6 +547,21 @@ fileInput.addEventListener("change", () => {
   validateStartDraftButton();
 });
 
+// TIER EDIT BUTTONS
+editTiersBtn.addEventListener("click", () => {
+  editingTiers = true;
+  editTiersBtn.style.display = "none";
+  doneTiersBtn.style.display = "";
+  renderTable();
+});
+doneTiersBtn.addEventListener("click", () => {
+  editingTiers = false;
+  editTiersBtn.style.display = "";
+  doneTiersBtn.style.display = "none";
+  renderTable();
+});
+
+// ESPN integration stays unchanged
 window.addEventListener("message", (event) => {
   if (event.source !== window) return;
   if (event.data?.type === "DRAFTED_PLAYERS") {
