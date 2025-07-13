@@ -1,5 +1,3 @@
-console.log("main.js loaded! (dynamic tier breaks, player movement, plus-buttons)");
-
 let players = [];
 let currentFilter = "ALL";
 let draftOrder = [];
@@ -7,7 +5,7 @@ let currentPick = 0;
 let teamNames = [];
 let myTeamIndex = -1;
 
-// Tier breaks: always sorted, values are indexes in players array AFTER WHICH the tier break goes
+// Tier breaks: sorted array of indexes AFTER WHICH the tier break goes
 let tierBreaks = [];
 
 const fileInput = document.getElementById("fileInput");
@@ -85,9 +83,9 @@ function renderTable() {
     });
     cbCell.appendChild(cb);
 
-    // Number
+    // Number - show LIVE BOARD number (not player.id)
     const numCell = document.createElement("td");
-    numCell.textContent = player.id;
+    numCell.textContent = i + 1; // <--- live row number!
 
     // Name & arrows
     const nameCell = document.createElement("td");
@@ -107,11 +105,14 @@ function renderTable() {
     arrowUp.onclick = (e) => {
       e.stopPropagation();
       if (i > 0) {
-        const tmp = players[i];
-        players[i] = players[i - 1];
-        players[i - 1] = tmp;
-        saveAll();
-        renderTable();
+        // swap in full players array (not visiblePlayers)
+        const idx1 = players.indexOf(visiblePlayers[i]);
+        const idx2 = players.indexOf(visiblePlayers[i - 1]);
+        if (idx1 !== -1 && idx2 !== -1) {
+          [players[idx1], players[idx2]] = [players[idx2], players[idx1]];
+          saveAll();
+          renderTable();
+        }
       }
     };
 
@@ -122,11 +123,14 @@ function renderTable() {
     arrowDown.onclick = (e) => {
       e.stopPropagation();
       if (i < visiblePlayers.length - 1) {
-        const tmp = players[i];
-        players[i] = players[i + 1];
-        players[i + 1] = tmp;
-        saveAll();
-        renderTable();
+        // swap in full players array (not visiblePlayers)
+        const idx1 = players.indexOf(visiblePlayers[i]);
+        const idx2 = players.indexOf(visiblePlayers[i + 1]);
+        if (idx1 !== -1 && idx2 !== -1) {
+          [players[idx1], players[idx2]] = [players[idx2], players[idx1]];
+          saveAll();
+          renderTable();
+        }
       }
     };
 
@@ -494,11 +498,11 @@ function filterByPosition(pos) {
 
 function resetAll() {
   if (!confirm("Are you sure you want to reset everything?")) return;
-  players = players.map((p, i) => ({
+  players = players.map(p => ({
     ...p,
     drafted: false,
     draftedBy: null,
-    pickNumber: null
+    pickNumber: null,
   }));
   currentPick = 0;
   draftOrder = [];
