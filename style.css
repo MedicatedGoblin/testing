@@ -340,65 +340,83 @@ tbody tr {
   }
 }
 
-/* FantasyPros TIER DIVIDER STYLES */
-.tier-divider-tr {
-  pointer-events: auto;
-  user-select: none;
-}
-
-.tier-divider-td {
-  padding: 0;
-  background: transparent !important;
-  border: none;
-  vertical-align: middle;
-}
-
+/* --- Tier Divider Bar with Arrows --- */
 .tier-divider-bar {
   display: flex;
   align-items: center;
-  gap: 0;
-  min-height: 22px;
-  padding: 0;
+  justify-content: flex-start;
+  gap: 12px;
   width: 100%;
+  min-height: 18px;
+  margin: 3px 0;
 }
 
-.tier-divider-bar-inner,
-.tier-drop-indicator-bar {
-  height: 10px;
-  min-width: 80px;
-  width: 100%;
+.tier-divider-bar-inner {
+  height: 4px;
   background: #1976d2;
-  border-radius: 6px;
-  display: block;
-  margin: 3px 0 2px 0;
-  transition: box-shadow 0.2s;
+  border-radius: 5px;
+  flex: 1;
+  margin-right: 12px;
+  min-width: 25px;
+  max-width: 220px;
+  box-shadow: 0 0 4px #1976d2a1;
 }
-.tier-divider-bar-inner.tier-divider-drop-target {
-  box-shadow: 0 0 0 2.5px #88888890;
-  outline: 1.5px dashed #88888890;
-}
+
 .tier-divider-label {
-  cursor: grab;
-  font-weight: 700;
+  font-weight: bold;
   color: #1976d2;
+  font-size: 1rem;
+  margin-right: 6px;
+  min-width: 65px;
   user-select: none;
-  padding: 2px 16px 2px 10px;
-  font-size: 0.96em;
-  letter-spacing: 0.5px;
-  background: #f7faff;
-  border-radius: 7px;
-  margin-left: 10px;
-  transition: box-shadow 0.15s;
-  box-shadow: 0 1px 3px #1976d220;
-}
-.tier-divider-label:active {
-  cursor: grabbing;
-  background: #e3f0fb;
-  box-shadow: 0 2px 10px #1976d240;
 }
 
-.tier-drop-indicator-bar {
-  background: #88888899;
-  box-shadow: 0 1.5px 9px #88888866;
+.tier-arrow {
+  background: #f5f7fa;
+  border: 1px solid #1976d2;
+  color: #1976d2;
+  border-radius: 4px;
+  font-size: 1rem;
+  padding: 2px 8px;
+  cursor: pointer;
+  margin-left: 2px;
+  transition: background 0.2s, border 0.2s;
+  box-shadow: 0 1px 3px #1976d218;
+}
+.tier-arrow:hover:not(:disabled) {
+  background: #1976d2;
+  color: #fff;
+}
+.tier-arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  background: #dce7fa;
+  color: #90a4cf;
+}
+.tier-divider-td {
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
 }
 
+.tier-divider-tr {
+  background: transparent !important;
+  box-shadow: none !important;
+  pointer-events: auto;
+}
+
+/* Responsive for mobile */
+@media (max-width: 700px) {
+  .tier-divider-label {
+    font-size: 0.95rem;
+    min-width: 44px;
+  }
+  .tier-arrow {
+    font-size: 0.95rem;
+    padding: 2px 6px;
+  }
+  .tier-divider-bar-inner {
+    min-width: 12px;
+    max-width: 90px;
+  }
+}
