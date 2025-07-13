@@ -2,16 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Fantasy Draft Board</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Fantasy Draft Tool</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <h2>Fantasy Draft Board</h2>
+
   <div class="controls">
-    <input type="file" id="fileInput" accept=".txt" />
-    <button id="submitFileBtn">Submit File</button>
-    <button id="removeFileBtn" disabled>Remove File</button>
+    <!-- File input removed. Everything else remains -->
     <input type="text" id="searchInput" placeholder="Search players..." />
     <button onclick="filterByPosition('ALL')">ALL</button>
     <button onclick="filterByPosition('RB')">RB</button>
@@ -20,13 +19,8 @@
     <button onclick="filterByPosition('TE')">TE</button>
     <label><input type="checkbox" id="hidePickedCheckbox" onchange="renderTable()" /> Hide Picked</label>
     <button onclick="resetAll()">Reset All</button>
-  </div>
-
-  <div class="edit-toolbar">
-    <button id="editTiersBtn">Edit</button>
-    <button id="doneTiersBtn" style="display:none;">Done</button>
+    <button id="editTiersBtn">Edit Tiers</button>
     <button id="addTierModeBtn" style="display:none;">Add Tier</button>
-    <button id="cancelAddTierBtn" style="display:none;">Cancel Add</button>
   </div>
 
   <div class="controls team-section">
@@ -69,6 +63,7 @@
     </thead>
     <tbody></tbody>
   </table>
+
   <script src="main.js"></script>
 </body>
 </html>
