@@ -42,11 +42,10 @@ function renderTable() {
   const visiblePlayers = getVisiblePlayers();
   console.log("RENDER TABLE - visiblePlayers.length:", visiblePlayers.length, "tierBreaks:", JSON.stringify(tierBreaks));
 
-  // Only reset tierBreaks if needed
+  // Only reset tierBreaks if needed (not every time!)
   if (
     !Array.isArray(tierBreaks) ||
-    tierBreaks.length === 0 ||
-    tierBreaks[tierBreaks.length - 1] !== visiblePlayers.length
+    tierBreaks.length === 0
   ) {
     tierBreaks = getTierBreaks(visiblePlayers.length);
     console.log("RESET tierBreaks!", tierBreaks);
@@ -189,7 +188,7 @@ function moveTier(tierIdx, direction) {
   renderTable();
 }
 
-// (Everything else is unchanged...)
+// Everything else unchanged...
 
 function handleFileSubmit() {
   if (!fileInput.files.length) {
