@@ -420,3 +420,40 @@ tbody tr {
   background: #d3e7fc;
   box-shadow: 0 2px 6px #1976d255;
 }
+
+/* =================== */
+/* TIER 2+ BLUE BAR   */
+/* =================== */
+
+.tier-divider-tr:not(:first-child) .tier-divider-td {
+  background: #1976d2 !important;
+  color: #fff !important;
+  border-left: 3px solid #1354a1;
+  font-size: 1em;
+  letter-spacing: 1.3px;
+  font-weight: 900;
+  box-shadow: 0 2px 8px #1976d255;
+  position: relative;
+  z-index: 1;
+}
+
+.tier-divider-tr:not(:first-child) .remove-tier-btn {
+  background: #0d2a5e;
+  color: #fff;
+  border: none;
+}
+.tier-divider-tr:not(:first-child) .remove-tier-btn:hover {
+  background: #fdaaaa;
+  color: #1976d2;
+}
+
+/* Make Tier 1 (the first .tier-divider-tr) look lighter, subtle, smaller */
+.tier-divider-tr:first-child .tier-divider-td {
+  background: #f3f8fd !important;
+  color: #1976d2 !important;
+  border-left: 3px solid #1976d2;
+  font-size: 0.85em;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  box-shadow: none;
+}
