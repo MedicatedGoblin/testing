@@ -1,3 +1,4 @@
+console.log("New main.js loaded!");
 let players = [];
 let currentFilter = "ALL";
 let draftOrder = [];
