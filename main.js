@@ -5,9 +5,8 @@ let currentPick = 0;
 let teamNames = [];
 let myTeamIndex = -1;
 
-// Tiers as break indexes (positions BETWEEN players)
-const NUM_TIERS = 6; // 6 breaks, which means 5 tiers
-let tierBreaks = []; // e.g., [1,5,10,15,20,25]; index positions in visiblePlayers
+const NUM_TIERS = 6; // 6 breaks = 5 tiers
+let tierBreaks = [];
 
 const fileInput = document.getElementById("fileInput");
 const submitFileBtn = document.getElementById("submitFileBtn");
@@ -55,16 +54,11 @@ function renderTable() {
   document.getElementById("myWR").innerHTML = "";
   document.getElementById("myTE").innerHTML = "";
 
-  let tierNum = 1, tierDivRows = [];
-  let trList = [];
-
-  // Build the table with both player rows and tier divider rows
-  let rowIndex = 0;
+  let tierNum = 1;
   for (let i = 0; i <= visiblePlayers.length; i++) {
     if (tierBreaks.includes(i) && i !== 0) {
       const tr = document.createElement("tr");
       tr.className = "tier-divider-tr";
-      tr.dataset.tierIndex = tierNum;
       const td = document.createElement("td");
       td.className = "tier-divider-td";
       td.colSpan = 5;
@@ -73,18 +67,34 @@ function renderTable() {
       bar.className = "tier-divider-bar";
       const barInner = document.createElement("div");
       barInner.className = "tier-divider-bar-inner";
+
       const label = document.createElement("span");
       label.className = "tier-divider-label";
       label.textContent = `Tier ${tierNum}`;
+
+      // Up arrow
+      const upArrow = document.createElement("button");
+      upArrow.textContent = "▲";
+      upArrow.className = "tier-arrow";
+      upArrow.disabled = (tierNum === 1);
+      upArrow.onclick = () => moveTier(tierNum - 1, -1);
+
+      // Down arrow
+      const downArrow = document.createElement("button");
+      downArrow.textContent = "▼";
+      downArrow.className = "tier-arrow";
+      downArrow.disabled = (tierNum === tierBreaks.length);
+      downArrow.onclick = () => moveTier(tierNum - 1, 1);
+
       bar.appendChild(barInner);
       bar.appendChild(label);
+      bar.appendChild(upArrow);
+      bar.appendChild(downArrow);
+
       td.appendChild(bar);
       tr.appendChild(td);
       tableBody.appendChild(tr);
-      tierDivRows.push({ tr, label, barInner, idx: i, tierNum });
-      trList.push(tr);
       tierNum++;
-      rowIndex++;
     }
     if (i < visiblePlayers.length) {
       const player = visiblePlayers[i];
@@ -131,171 +141,31 @@ function renderTable() {
       tr.appendChild(draftedByCell);
 
       tableBody.appendChild(tr);
-      trList.push(tr);
 
       if (player.draftedBy === teamNames[myTeamIndex]) {
         const li = document.createElement("li");
         li.textContent = `${player.name} (${player.tag})`;
         document.getElementById("my" + player.position).appendChild(li);
       }
-      rowIndex++;
     }
   }
-
-  // --- Drag/drop logic for tier dividers, both bar and label ---
-  let dragIdx = null;
-  let dropPos = null;
-  let dropIndicatorRow = null;
-
-  // Make every space between rows a drop zone!
-  let dropZones = Array.from(tableBody.children).map((tr, i) => {
-    return {tr, index: i};
-  });
-  dropZones.push({tr: null, index: tableBody.children.length});
-
-  // Make both bar and label draggable
-  tierDivRows.forEach(({tr, label, barInner, idx, tierNum}) => {
-    [barInner, label].forEach(handle => {
-      if (tierNum === 1 || tierNum > NUM_TIERS) {
-        handle.setAttribute("draggable", "false");
-        handle.ondragstart = null;
-        handle.ondragend = null;
-      } else {
-        handle.setAttribute("draggable", "true");
-        handle.ondragstart = (e) => {
-          dragIdx = idx;
-          label.classList.add("dragging");
-          barInner.classList.add("dragging");
-
-          // Custom drag image: full-width blue bar
-          const ghost = document.createElement("div");
-          ghost.style.width = "320px";
-          ghost.style.height = "10px";
-          ghost.style.background = "#1976d2";
-          ghost.style.borderRadius = "6px";
-          ghost.style.boxShadow = "0 2px 10px #1976d233";
-          ghost.style.margin = "0 auto";
-          document.body.appendChild(ghost);
-          e.dataTransfer.setDragImage(ghost, 160, 5);
-          setTimeout(() => document.body.removeChild(ghost), 0);
-        };
-        handle.ondragend = () => {
-          dragIdx = null;
-          label.classList.remove("dragging");
-          barInner.classList.remove("dragging");
-          if (dropIndicatorRow && dropIndicatorRow.parentNode) {
-            dropIndicatorRow.parentNode.removeChild(dropIndicatorRow);
-          }
-          dropIndicatorRow = null;
-        };
-      }
-    });
-  });
-
-  // Allow drop between every row
-  dropZones.forEach(({tr, index}) => {
-    let beforeNode = tr;
-    let dropTarget = beforeNode;
-    let attachDrop = node => {
-      node.ondragover = (e) => {
-        e.preventDefault();
-        if (dragIdx === null) return;
-        dropPos = index;
-        if (!dropIndicatorRow) {
-          dropIndicatorRow = document.createElement("tr");
-          dropIndicatorRow.className = "tier-drop-indicator-row";
-          let td = document.createElement("td");
-          td.colSpan = 5;
-          td.innerHTML = `<div class="tier-drop-indicator-bar"></div>`;
-          dropIndicatorRow.appendChild(td);
-        }
-        if (dropTarget && dropTarget.parentNode) {
-          if (dropTarget.previousSibling !== dropIndicatorRow) {
-            if (dropIndicatorRow.parentNode) dropIndicatorRow.parentNode.removeChild(dropIndicatorRow);
-            dropTarget.parentNode.insertBefore(dropIndicatorRow, dropTarget);
-          }
-        } else if (!dropTarget && tableBody.lastChild !== dropIndicatorRow) {
-          if (dropIndicatorRow.parentNode) dropIndicatorRow.parentNode.removeChild(dropIndicatorRow);
-          tableBody.appendChild(dropIndicatorRow);
-        }
-      };
-      node.ondragleave = () => {
-        setTimeout(() => {
-          if (dropIndicatorRow && dropIndicatorRow.parentNode) {
-            dropIndicatorRow.parentNode.removeChild(dropIndicatorRow);
-          }
-          dropIndicatorRow = null;
-        }, 60);
-      };
-      node.ondrop = (e) => {
-        e.preventDefault();
-        if (dragIdx === null || dropPos == null) return;
-        let allBreaks = [...tierBreaks];
-        let currentBreaks = allBreaks.filter(b => b !== dragIdx);
-        let insertAt = dropPos;
-        if (insertAt === 0 || insertAt === visiblePlayers.length) return;
-        currentBreaks.push(insertAt);
-        currentBreaks.sort((a, b) => a - b);
-        tierBreaks = currentBreaks;
-        if (dropIndicatorRow && dropIndicatorRow.parentNode) {
-          dropIndicatorRow.parentNode.removeChild(dropIndicatorRow);
-        }
-        dropIndicatorRow = null;
-        dragIdx = null;
-        dropPos = null;
-        renderTable();
-      };
-    };
-    if (!dropTarget) {
-      tableBody.ondragover = (e) => {
-        e.preventDefault();
-        dropPos = index;
-        if (!dropIndicatorRow) {
-          dropIndicatorRow = document.createElement("tr");
-          dropIndicatorRow.className = "tier-drop-indicator-row";
-          let td = document.createElement("td");
-          td.colSpan = 5;
-          td.innerHTML = `<div class="tier-drop-indicator-bar"></div>`;
-          dropIndicatorRow.appendChild(td);
-        }
-        if (tableBody.lastChild !== dropIndicatorRow) {
-          if (dropIndicatorRow.parentNode) dropIndicatorRow.parentNode.removeChild(dropIndicatorRow);
-          tableBody.appendChild(dropIndicatorRow);
-        }
-      };
-      tableBody.ondragleave = () => {
-        setTimeout(() => {
-          if (dropIndicatorRow && dropIndicatorRow.parentNode) {
-            dropIndicatorRow.parentNode.removeChild(dropIndicatorRow);
-          }
-          dropIndicatorRow = null;
-        }, 60);
-      };
-      tableBody.ondrop = (e) => {
-        e.preventDefault();
-        if (dragIdx === null || dropPos == null) return;
-        let allBreaks = [...tierBreaks];
-        let currentBreaks = allBreaks.filter(b => b !== dragIdx);
-        let insertAt = dropPos;
-        if (insertAt === 0 || insertAt === visiblePlayers.length) return;
-        currentBreaks.push(insertAt);
-        currentBreaks.sort((a, b) => a - b);
-        tierBreaks = currentBreaks;
-        if (dropIndicatorRow && dropIndicatorRow.parentNode) {
-          dropIndicatorRow.parentNode.removeChild(dropIndicatorRow);
-        }
-        dropIndicatorRow = null;
-        dragIdx = null;
-        dropPos = null;
-        renderTable();
-      };
-    } else {
-      attachDrop(dropTarget);
-    }
-  });
 }
 
-// --- Rest of your unchanged draft/team code below ---
+function moveTier(index, direction) {
+  if (index < 0 || index >= tierBreaks.length) return;
+  const newBreaks = [...tierBreaks];
+  const targetIndex = index + direction;
+  if (targetIndex < 0 || targetIndex >= tierBreaks.length) return;
+  // Swap
+  const temp = newBreaks[index];
+  newBreaks[index] = newBreaks[targetIndex];
+  newBreaks[targetIndex] = temp;
+  newBreaks.sort((a, b) => a - b);
+  tierBreaks = newBreaks;
+  renderTable();
+}
+
+// --- All your original logic below ---
 
 function handleFileSubmit() {
   if (!fileInput.files.length) {
