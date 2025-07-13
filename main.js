@@ -5,7 +5,8 @@ let currentPick = 0;
 let teamNames = [];
 let myTeamIndex = -1;
 
-const NUM_TIERS = 6; // 6 breaks = 5 tiers
+// Number of breaks (e.g., [1,5,10,15,20,25])
+const NUM_TIERS = 6;
 let tierBreaks = [];
 
 const fileInput = document.getElementById("fileInput");
@@ -41,7 +42,7 @@ function renderTable() {
   if (!Array.isArray(tierBreaks) || tierBreaks.length === 0 || tierBreaks[tierBreaks.length - 1] !== visiblePlayers.length) {
     tierBreaks = getTierBreaks(visiblePlayers.length);
   }
-  // Clean and sort tier breaks
+  // Clean and sort
   tierBreaks = tierBreaks
     .filter((b, i, arr) => b > 0 && b <= visiblePlayers.length && (i === 0 || b > arr[i - 1]))
     .sort((a, b) => a - b);
@@ -56,10 +57,9 @@ function renderTable() {
   document.getElementById("myTE").innerHTML = "";
 
   let tierNum = 1;
-  let tierBreakIdx = 0; // current index in tierBreaks
+  let tierBreakIdx = 0;
 
   for (let i = 0; i <= visiblePlayers.length; i++) {
-    // --- Always render Tier 1 divider at i == 0, and others at tier break positions ---
     if (i === 0 || (tierBreakIdx < tierBreaks.length && i === tierBreaks[tierBreakIdx])) {
       // Insert tier divider row
       const tr = document.createElement("tr");
@@ -77,27 +77,27 @@ function renderTable() {
       label.className = "tier-divider-label";
       label.textContent = `Tier ${tierNum}`;
 
-      // For tiers above 1 (i.e. tierNum > 1), add arrows
       if (tierNum > 1 && tierNum <= tierBreaks.length) {
-        // Up arrow (can't go above previous break+1)
+        // Up arrow
         const upArrow = document.createElement("button");
         upArrow.textContent = "▲";
         upArrow.className = "tier-arrow";
         const minUp = tierBreaks[tierNum - 2] + 1;
-        upArrow.disabled = (tierBreaks[tierNum - 1] - 1 < minUp);
+        upArrow.disabled = (tierBreaks[tierNum - 1] <= minUp);
         upArrow.onclick = () => moveTier(tierNum - 1, -1);
 
-        // Down arrow (can't go below next break-1)
+        // Down arrow
         const downArrow = document.createElement("button");
         downArrow.textContent = "▼";
         downArrow.className = "tier-arrow";
         const maxDown = (tierNum === tierBreaks.length) ? visiblePlayers.length : tierBreaks[tierNum];
-        downArrow.disabled = (tierBreaks[tierNum - 1] + 1 >= maxDown);
+        downArrow.disabled = (tierBreaks[tierNum - 1] >= maxDown - 1);
         downArrow.onclick = () => moveTier(tierNum - 1, 1);
 
         bar.appendChild(upArrow);
         bar.appendChild(downArrow);
       }
+
       bar.appendChild(barInner);
       bar.appendChild(label);
 
@@ -105,7 +105,7 @@ function renderTable() {
       tr.appendChild(td);
       tableBody.appendChild(tr);
       tierNum++;
-      if (i > 0) tierBreakIdx++; // skip to next break index, except for i==0
+      if (i > 0) tierBreakIdx++;
     }
     // Player row
     if (i < visiblePlayers.length) {
@@ -163,20 +163,19 @@ function renderTable() {
   }
 }
 
-// FINAL: Moves the divider up or down one row (never overlaps, always valid)
 function moveTier(tierIdx, direction) {
-  if (tierIdx <= 0 || tierIdx >= tierBreaks.length) return; // Don't move Tier 1
+  // tierIdx: 1 = second divider, etc
   const visiblePlayers = getVisiblePlayers();
+  if (tierIdx <= 0 || tierIdx >= tierBreaks.length) return;
   const prevBreak = tierBreaks[tierIdx - 1];
   const nextBreak = (tierIdx === tierBreaks.length - 1) ? visiblePlayers.length : tierBreaks[tierIdx + 1];
   let newPos = tierBreaks[tierIdx] + direction;
-  // Must always be > prevBreak and < nextBreak
   if (newPos <= prevBreak || newPos >= nextBreak) return;
   tierBreaks[tierIdx] = newPos;
   renderTable();
 }
 
-// ----- The rest of your original logic -----
+// -- File/player/team logic from your working version --
 
 function handleFileSubmit() {
   if (!fileInput.files.length) {
