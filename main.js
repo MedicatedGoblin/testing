@@ -39,11 +39,9 @@ function getVisiblePlayers() {
 
 function renderTable() {
   const visiblePlayers = getVisiblePlayers();
-  // Sync tier breaks
   if (!Array.isArray(tierBreaks) || tierBreaks[tierBreaks.length - 1] !== visiblePlayers.length) {
     tierBreaks = getTierBreaks(visiblePlayers.length);
   }
-  // Ensure no duplicate or out-of-bounds breaks
   tierBreaks = tierBreaks.filter((b, i, arr) =>
     b > 0 && b <= visiblePlayers.length && (i === 0 || b > arr[i - 1])
   );
@@ -60,9 +58,7 @@ function renderTable() {
   let tierNum = 1, tierDivRows = [];
 
   for (let i = 0; i <= visiblePlayers.length; i++) {
-    // Insert divider *before* player if this index is a tier break (except index 0)
     if (tierBreaks.includes(i) && i !== 0) {
-      // Insert thin tier divider
       const tr = document.createElement("tr");
       tr.className = "tier-divider-tr";
       tr.dataset.tierIndex = tierNum;
@@ -70,7 +66,6 @@ function renderTable() {
       td.className = "tier-divider-td";
       td.colSpan = 5;
 
-      // The blue bar and label
       const bar = document.createElement("div");
       bar.className = "tier-divider-bar";
       const barInner = document.createElement("div");
@@ -78,19 +73,16 @@ function renderTable() {
       const label = document.createElement("span");
       label.className = "tier-divider-label";
       label.textContent = `Tier ${tierNum}`;
-      label.setAttribute("draggable", "true");
-      label.dataset.tierIndex = tierNum;
       bar.appendChild(barInner);
       bar.appendChild(label);
       td.appendChild(bar);
       tr.appendChild(td);
       tableBody.appendChild(tr);
-      tierDivRows.push({ tr, label, idx: i, tierNum });
+      tierDivRows.push({ tr, label, barInner, idx: i, tierNum });
 
       tierNum++;
     }
     if (i < visiblePlayers.length) {
-      // Add the player row
       const player = visiblePlayers[i];
       const tr = document.createElement("tr");
       tr.classList.add(player.position);
@@ -136,7 +128,6 @@ function renderTable() {
 
       tableBody.appendChild(tr);
 
-      // "My picks" lists
       if (player.draftedBy === teamNames[myTeamIndex]) {
         const li = document.createElement("li");
         li.textContent = `${player.name} (${player.tag})`;
@@ -145,72 +136,100 @@ function renderTable() {
     }
   }
 
-  // --- Drag/drop logic for tier dividers ---
-  let dragIdx = null, dropIndicator = null;
-  tierDivRows.forEach(({ label, tr, idx, tierNum }) => {
-    if (tierNum === 1 || tierNum > NUM_TIERS) {
-      label.setAttribute("draggable", "false");
-      return;
-    }
-    label.setAttribute("draggable", "true");
+  // --- Drag/drop logic for tier dividers, both bar and label ---
+  let dragIdx = null;
+  let dropIndicatorRow = null;
 
-    label.ondragstart = (e) => {
-      dragIdx = idx;
-      label.classList.add("dragging");
-      // Ghost blue bar
-      const ghost = document.createElement("div");
-      ghost.style.width = "100px";
-      ghost.style.height = "10px";
-      ghost.style.background = "#1976d2";
-      ghost.style.borderRadius = "6px";
-      ghost.style.boxShadow = "0 2px 10px #1976d233";
-      ghost.style.margin = "0 auto";
-      document.body.appendChild(ghost);
-      e.dataTransfer.setDragImage(ghost, 50, 5);
-      setTimeout(() => document.body.removeChild(ghost), 0);
-    };
-
-    label.ondragend = () => {
-      dragIdx = null;
-      label.classList.remove("dragging");
-      if (dropIndicator && dropIndicator.parentNode)
-        dropIndicator.parentNode.removeChild(dropIndicator);
-      dropIndicator = null;
-      document.querySelectorAll('.tier-divider-bar-inner').forEach(barInner => {
-        barInner.classList.remove('tier-divider-drop-target');
-      });
-    };
+  tierDivRows.forEach(({ tr, label, barInner, idx, tierNum }) => {
+    [barInner, label].forEach(handle => {
+      if (tierNum === 1 || tierNum > NUM_TIERS) {
+        handle.setAttribute("draggable", "false");
+        handle.ondragstart = null;
+        handle.ondragend = null;
+      } else {
+        handle.setAttribute("draggable", "true");
+        handle.ondragstart = (e) => {
+          dragIdx = idx;
+          label.classList.add("dragging");
+          barInner.classList.add("dragging");
+          // Ghost blue bar
+          const ghost = document.createElement("div");
+          ghost.style.width = "100px";
+          ghost.style.height = "10px";
+          ghost.style.background = "#1976d2";
+          ghost.style.borderRadius = "6px";
+          ghost.style.boxShadow = "0 2px 10px #1976d233";
+          ghost.style.margin = "0 auto";
+          document.body.appendChild(ghost);
+          e.dataTransfer.setDragImage(ghost, 50, 5);
+          setTimeout(() => document.body.removeChild(ghost), 0);
+        };
+        handle.ondragend = () => {
+          dragIdx = null;
+          label.classList.remove("dragging");
+          barInner.classList.remove("dragging");
+          if (dropIndicatorRow && dropIndicatorRow.parentNode) {
+            dropIndicatorRow.parentNode.removeChild(dropIndicatorRow);
+          }
+          dropIndicatorRow = null;
+          document.querySelectorAll('.tier-divider-bar-inner').forEach(barInner2 => {
+            barInner2.classList.remove('tier-divider-drop-target');
+          });
+        };
+      }
+    });
   });
 
-  // Allow drop between any two players
   let trList = Array.from(tableBody.querySelectorAll("tr"));
   trList.forEach((row, i) => {
     if (row.classList.contains("tier-divider-tr")) {
       const barInner = row.querySelector(".tier-divider-bar-inner");
       if (!barInner) return;
-
       row.ondragover = (e) => {
         e.preventDefault();
         if (dragIdx === null) return;
+        if (!dropIndicatorRow) {
+          dropIndicatorRow = document.createElement("tr");
+          dropIndicatorRow.className = "tier-drop-indicator-row";
+          let td = document.createElement("td");
+          td.colSpan = 5;
+          td.innerHTML = `<div class="tier-drop-indicator-bar"></div>`;
+          dropIndicatorRow.appendChild(td);
+        }
+        if (row.nextSibling !== dropIndicatorRow) {
+          if (dropIndicatorRow.parentNode) dropIndicatorRow.parentNode.removeChild(dropIndicatorRow);
+          if (row.nextSibling) row.parentNode.insertBefore(dropIndicatorRow, row.nextSibling);
+          else row.parentNode.appendChild(dropIndicatorRow);
+        }
         barInner.classList.add("tier-divider-drop-target");
       };
       row.ondragleave = () => {
         barInner.classList.remove("tier-divider-drop-target");
+        setTimeout(() => {
+          if (dropIndicatorRow && dropIndicatorRow.parentNode) {
+            dropIndicatorRow.parentNode.removeChild(dropIndicatorRow);
+          }
+          dropIndicatorRow = null;
+        }, 70);
       };
       row.ondrop = (e) => {
         e.preventDefault();
         if (dragIdx === null) return;
         const allBreaks = [...tierBreaks];
         const thisIdx = tierDivRows.find(tierRow => tierRow.tr === row).idx;
-        if (thisIdx === dragIdx) return; // No-op
+        if (thisIdx === dragIdx) return;
         const idxList = tierDivRows.map(t => t.idx);
         let dragPos = idxList.indexOf(dragIdx);
         let dropPos = idxList.indexOf(thisIdx);
         if (dropPos < 0 || dragPos < 0) return;
         const toMove = allBreaks.splice(dragPos, 1)[0];
         allBreaks.splice(dropPos, 0, toMove);
-        allBreaks.sort((a,b) => a-b);
-        tierBreaks = allBreaks.filter((v, i, arr) => i===0 || v !== arr[i-1]);
+        allBreaks.sort((a, b) => a - b);
+        tierBreaks = allBreaks.filter((v, i, arr) => i === 0 || v !== arr[i - 1]);
+        if (dropIndicatorRow && dropIndicatorRow.parentNode) {
+          dropIndicatorRow.parentNode.removeChild(dropIndicatorRow);
+        }
+        dropIndicatorRow = null;
         renderTable();
       };
     }
@@ -465,11 +484,6 @@ function loadAll() {
   }
 }
 
-function filterByPosition(pos) {
-  currentFilter = pos;
-  renderTable();
-}
-
 function updateCurrentPickDisplay() {
   if (currentPick >= draftOrder.length) {
     currentPickDisplay.textContent = "Draft Complete!";
@@ -481,16 +495,42 @@ function updateCurrentPickDisplay() {
   currentPickDisplay.textContent = `Pick ${currentPick + 1} - ${teamName}`;
 }
 
+function filterByPosition(pos) {
+  currentFilter = pos;
+  renderTable();
+}
+
+function resetAll() {
+  if (!confirm("Are you sure you want to reset everything?")) return;
+  players = players.map(p => ({
+    ...p,
+    drafted: false,
+    draftedBy: null,
+    pickNumber: null,
+  }));
+  currentPick = 0;
+  draftOrder = [];
+  teamNames = [];
+  myTeamIndex = -1;
+  teamCountSelect.value = "10";
+  yourTeamSelect.value = "";
+  myPickSelect.innerHTML = "";
+  myPickSelect.disabled = true;
+  startDraftBtn.disabled = true;
+  localStorage.clear();
+  generateTeamNameInputs();
+  renderTable();
+  updateCurrentPickDisplay();
+  clearFileInput();
+}
+
 function validateStartDraftButton() {
   let valid = true;
-
-  // Clear all previous errors first
   fileInput.classList.remove("error");
   submitFileBtn.classList.remove("error");
   startDraftBtn.classList.remove("error");
   yourTeamSelect.classList.remove("error");
 
-  // Validate team names: all must be non-empty
   const teamCount = parseInt(teamCountSelect.value, 10);
   let teamsValid = true;
   for (let i = 0; i < teamCount; i++) {
@@ -503,18 +543,14 @@ function validateStartDraftButton() {
       input.classList.remove("error");
     }
   }
-
   if (!teamsValid) valid = false;
 
-  // Validate your team selected
   if (yourTeamSelect.value === "" || yourTeamSelect.value === null) {
     yourTeamSelect.classList.add("error");
     valid = false;
   } else {
     yourTeamSelect.classList.remove("error");
   }
-
-  // Validate player list loaded (file submitted)
   if (players.length === 0) {
     fileInput.classList.add("error");
     submitFileBtn.classList.add("error");
@@ -523,7 +559,6 @@ function validateStartDraftButton() {
     fileInput.classList.remove("error");
     submitFileBtn.classList.remove("error");
   }
-
   startDraftBtn.disabled = !valid;
 }
 
@@ -533,7 +568,6 @@ function setupDraft() {
     alert("Please fix the highlighted errors before starting the draft.");
     return;
   }
-
   const namesSet = new Set();
   for (const name of teamNames) {
     if (!name) {
@@ -546,7 +580,6 @@ function setupDraft() {
     }
     namesSet.add(name.toLowerCase());
   }
-
   const teamCount = parseInt(teamCountSelect.value, 10);
   draftOrder = [];
   let forward = true;
@@ -555,9 +588,7 @@ function setupDraft() {
     draftOrder.push(...(forward ? roundOrder : roundOrder.reverse()));
     forward = !forward;
   }
-
-  if (currentPick >= draftOrder.length) currentPick = 0; // reset if draft finished previously
-
+  if (currentPick >= draftOrder.length) currentPick = 0;
   updateCurrentPickDisplay();
   saveAll();
   renderTable();
