@@ -21,6 +21,7 @@ const currentPickDisplay = document.getElementById("currentPickDisplay");
 const teamNamesContainer = document.getElementById("teamNames");
 
 function getTierBreaks(numPlayers) {
+  // e.g., [1,5,10,15,20,25], always capped at numPlayers
   let breaks = [1, 5, 10, 15, 20, 25].filter(b => b <= numPlayers);
   if (!breaks.includes(numPlayers)) breaks.push(numPlayers);
   return breaks;
@@ -36,13 +37,12 @@ function getVisiblePlayers() {
   });
 }
 
-// UPDATED: Place Tier 1 above first row, never moves; other tiers get arrows and can move in bounds
 function renderTable() {
   const visiblePlayers = getVisiblePlayers();
   if (!Array.isArray(tierBreaks) || tierBreaks.length === 0 || tierBreaks[tierBreaks.length - 1] !== visiblePlayers.length) {
     tierBreaks = getTierBreaks(visiblePlayers.length);
   }
-  // Clean tier breaks
+  // Clean and sort tier breaks
   tierBreaks = tierBreaks
     .filter((b, i, arr) => b > 0 && b <= visiblePlayers.length && (i === 0 || b > arr[i - 1]))
     .sort((a, b) => a - b);
@@ -56,10 +56,13 @@ function renderTable() {
   document.getElementById("myWR").innerHTML = "";
   document.getElementById("myTE").innerHTML = "";
 
-  let tierNum = 1, playerIdx = 0;
+  let tierNum = 1;
+  let tierBreakIdx = 0; // current index in tierBreaks
+
   for (let i = 0; i <= visiblePlayers.length; i++) {
-    if (tierBreaks.includes(i) && i !== 0) {
-      // Insert thin tier divider (Tier 1 will only be at i=0 below header)
+    // --- Always render Tier 1 divider at i == 0, and others at tier break positions ---
+    if (i === 0 || (tierBreakIdx < tierBreaks.length && i === tierBreaks[tierBreakIdx])) {
+      // Insert tier divider row
       const tr = document.createElement("tr");
       tr.className = "tier-divider-tr";
       const td = document.createElement("td");
@@ -75,26 +78,22 @@ function renderTable() {
       label.className = "tier-divider-label";
       label.textContent = `Tier ${tierNum}`;
 
-      // Add arrows for tiers except Tier 1
-      if (tierNum > 1) {
-        // Up arrow
+      // For tiers above 1 (i.e. tierNum > 1), add arrows
+      if (tierNum > 1 && tierNum <= tierBreaks.length) {
+        // up arrow (can't go above previous break+1, can't move past previous tier or first player)
         const upArrow = document.createElement("button");
         upArrow.textContent = "▲";
         upArrow.className = "tier-arrow";
-        // Can't move above previous break + 1
-        upArrow.disabled = (tierBreaks[tierNum - 2] + 1 >= tierBreaks[tierNum - 1]);
+        const minUp = tierBreaks[tierNum - 2] + 1;
+        upArrow.disabled = (tierBreaks[tierNum - 1] <= minUp);
         upArrow.onclick = () => moveTier(tierNum - 1, -1);
 
-        // Down arrow
+        // down arrow (can't go below next break-1, can't move past next tier or last player)
         const downArrow = document.createElement("button");
         downArrow.textContent = "▼";
         downArrow.className = "tier-arrow";
-        // Can't move below next break - 1 or past the last player
-        downArrow.disabled = (
-          tierNum === tierBreaks.length ||
-          tierBreaks[tierNum - 1] + 1 >= tierBreaks[tierNum] ||
-          tierBreaks[tierNum - 1] >= visiblePlayers.length - 1
-        );
+        const maxDown = (tierNum === tierBreaks.length) ? visiblePlayers.length - 1 : tierBreaks[tierNum] - 1;
+        downArrow.disabled = (tierBreaks[tierNum - 1] >= maxDown);
         downArrow.onclick = () => moveTier(tierNum - 1, 1);
 
         bar.appendChild(upArrow);
@@ -107,9 +106,10 @@ function renderTable() {
       tr.appendChild(td);
       tableBody.appendChild(tr);
       tierNum++;
+      if (i > 0) tierBreakIdx++; // skip to next break index, except for i==0
     }
+    // Player row
     if (i < visiblePlayers.length) {
-      // Player row
       const player = visiblePlayers[i];
       const tr = document.createElement("tr");
       tr.classList.add(player.position);
@@ -164,9 +164,8 @@ function renderTable() {
   }
 }
 
-// Move a tier up/down (index in tierBreaks; 0 = Tier 1, never moves)
 function moveTier(tierIdx, direction) {
-  if (tierIdx <= 0 || tierIdx >= tierBreaks.length) return;
+  if (tierIdx <= 0 || tierIdx >= tierBreaks.length) return; // Don't move Tier 1
   const visiblePlayers = getVisiblePlayers();
   const minPos = tierBreaks[tierIdx - 1] + 1;
   const maxPos = (tierIdx === tierBreaks.length - 1)
