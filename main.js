@@ -80,14 +80,14 @@ function renderTable() {
       upBtn.title = "Move tier up";
       upBtn.innerHTML = "↑";
       upBtn.onclick = e => { e.stopPropagation(); moveTier(t, -1); };
-      upBtn.disabled = t <= 1;
+      upBtn.disabled = tierBreaks[t] <= tierBreaks[t-1] + 1;
       controls.appendChild(upBtn);
       // Down
       const downBtn = document.createElement("button");
       downBtn.title = "Move tier down";
       downBtn.innerHTML = "↓";
       downBtn.onclick = e => { e.stopPropagation(); moveTier(t, 1); };
-      downBtn.disabled = t >= tierBreaks.length - 2;
+      downBtn.disabled = tierBreaks[t] >= tierBreaks[t+1] - 1;
       controls.appendChild(downBtn);
       // Remove (cannot remove if only 2 breaks remain)
       if (tierBreaks.length > 3) {
@@ -215,13 +215,12 @@ function renderTable() {
 
 // -------- Tier Move/Insert/Remove --------
 function moveTier(idx, direction) {
-  if (idx <= 0 || idx >= tierBreaks.length - 1) return;
-  const swapIdx = idx + direction;
-  if (swapIdx <= 0 || swapIdx >= tierBreaks.length - 1) return;
-  const tmp = tierBreaks[idx];
-  tierBreaks[idx] = tierBreaks[swapIdx];
-  tierBreaks[swapIdx] = tmp;
-  tierBreaks.sort((a, b) => a - b);
+  // Only allow up/down movement between adjacent breaks and not overlap
+  if (idx <= 0 || idx >= tierBreaks.length - 1) return; // Tier 1 stuck
+  const newBreak = tierBreaks[idx] + direction;
+  // Prevent overlap (no fewer than 1 player per tier)
+  if (newBreak <= tierBreaks[idx - 1] + 1 || newBreak >= tierBreaks[idx + 1] - 1) return;
+  tierBreaks[idx] = newBreak;
   saveAll();
   renderTable();
 }
