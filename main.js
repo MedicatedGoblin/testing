@@ -1,3 +1,5 @@
+console.log("main.js loaded!");
+
 let players = [];
 let currentFilter = "ALL";
 let draftOrder = [];
@@ -5,7 +7,7 @@ let currentPick = 0;
 let teamNames = [];
 let myTeamIndex = -1;
 
-// Number of breaks (e.g., [1,5,10,15,20,25])
+// Persistent global tier breaks!
 const NUM_TIERS = 6;
 let tierBreaks = null;
 
@@ -21,7 +23,6 @@ const startDraftBtn = document.getElementById("startDraftBtn");
 const currentPickDisplay = document.getElementById("currentPickDisplay");
 const teamNamesContainer = document.getElementById("teamNames");
 
-// Utility for default tier breaks
 function getTierBreaks(numPlayers) {
   let breaks = [1, 5, 10, 15, 20, 25].filter(b => b <= numPlayers);
   if (!breaks.includes(numPlayers)) breaks.push(numPlayers);
@@ -40,11 +41,20 @@ function getVisiblePlayers() {
 
 function renderTable() {
   const visiblePlayers = getVisiblePlayers();
-  // Only reset tierBreaks if player list length changed or breaks are invalid
-  if (!Array.isArray(tierBreaks) || (tierBreaks.length === 0) || (tierBreaks[tierBreaks.length-1] !== visiblePlayers.length)) {
+
+  // LOG: state before render
+  console.log("RENDER TABLE with tierBreaks:", JSON.stringify(tierBreaks), "visiblePlayers.length:", visiblePlayers.length);
+
+  // Only reset if necessary
+  if (
+    !Array.isArray(tierBreaks) ||
+    tierBreaks.length === 0 ||
+    tierBreaks[tierBreaks.length - 1] !== visiblePlayers.length
+  ) {
     tierBreaks = getTierBreaks(visiblePlayers.length);
+    console.log("RESET tierBreaks! Now:", JSON.stringify(tierBreaks));
   }
-  // Clean tierBreaks (monotonic, in bounds)
+  // Clean up breaks: strictly increasing, no dups, in bounds
   tierBreaks = tierBreaks
     .filter((b, i, arr) => b > 0 && b <= visiblePlayers.length && (i === 0 || b > arr[i-1]))
     .sort((a, b) => a - b);
@@ -61,8 +71,9 @@ function renderTable() {
   let tierNum = 1;
   let tierBreakIdx = 0;
   for (let i = 0; i <= visiblePlayers.length; i++) {
-    // Insert divider above first player and at each tier break
+    // Draw divider above 1st and each tier break
     if (i === 0 || (tierBreakIdx < tierBreaks.length && i === tierBreaks[tierBreakIdx])) {
+      console.log("Drawing tier", tierNum, "at i =", i, "tierBreaks =", JSON.stringify(tierBreaks));
       const tr = document.createElement("tr");
       tr.className = "tier-divider-tr";
       const td = document.createElement("td");
@@ -78,8 +89,9 @@ function renderTable() {
       label.className = "tier-divider-label";
       label.textContent = `Tier ${tierNum}`;
 
+      // Show up/down arrows for Tiers 2+
       if (tierNum > 1 && tierNum <= tierBreaks.length) {
-        // Up arrow
+        // UP arrow
         const upArrow = document.createElement("button");
         upArrow.textContent = "▲";
         upArrow.className = "tier-arrow";
@@ -87,7 +99,7 @@ function renderTable() {
         upArrow.disabled = (tierBreaks[tierNum - 1] <= minUp);
         upArrow.onclick = () => moveTier(tierNum - 1, -1);
 
-        // Down arrow
+        // DOWN arrow
         const downArrow = document.createElement("button");
         downArrow.textContent = "▼";
         downArrow.className = "tier-arrow";
@@ -108,6 +120,7 @@ function renderTable() {
       tierNum++;
       if (i > 0) tierBreakIdx++;
     }
+
     // Player row
     if (i < visiblePlayers.length) {
       const player = visiblePlayers[i];
@@ -166,7 +179,6 @@ function renderTable() {
 
 function moveTier(tierIdx, direction) {
   console.log("moveTier CALLED", tierIdx, direction, JSON.stringify(tierBreaks));
-  // tierIdx: 1 = second divider, etc
   const visiblePlayers = getVisiblePlayers();
   if (tierIdx <= 0 || tierIdx >= tierBreaks.length) return;
   const prevBreak = tierBreaks[tierIdx - 1];
@@ -174,10 +186,11 @@ function moveTier(tierIdx, direction) {
   let newPos = tierBreaks[tierIdx] + direction;
   if (newPos <= prevBreak || newPos >= nextBreak) return;
   tierBreaks[tierIdx] = newPos;
+  console.log("After update:", JSON.stringify(tierBreaks));
   renderTable();
 }
 
-// ---- Your unchanged draft/team logic below ----
+// (All your other unchanged draft/team logic below...)
 
 function handleFileSubmit() {
   if (!fileInput.files.length) {
