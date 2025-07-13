@@ -1,5 +1,3 @@
-console.log("main.js loaded! (player tier model)");
-
 let players = [];
 let currentFilter = "ALL";
 let draftOrder = [];
@@ -7,7 +5,7 @@ let currentPick = 0;
 let teamNames = [];
 let myTeamIndex = -1;
 
-const NUM_TIERS = 6;
+const NUM_TIERS = 5; // Change to 8 for 8 tiers
 
 const fileInput = document.getElementById("fileInput");
 const submitFileBtn = document.getElementById("submitFileBtn");
@@ -135,7 +133,6 @@ function renderTable() {
       }
     };
 
-    // Put arrows at start of name cell for visibility
     nameCell.prepend(arrowDown);
     nameCell.prepend(arrowUp);
 
@@ -174,6 +171,12 @@ function handleFileSubmit() {
   const reader = new FileReader();
   reader.onload = e => {
     const lines = e.target.result.split("\n").filter(line => line.trim());
+
+    // ----- CUSTOM TIER BREAKS HERE -----
+    // For 5 tiers: 1-10, 11-15, 16-20, 21-25, 26+
+    // For 8 tiers: const breaks = [5, 10, 15, 20, 25, 30, 35];
+    const breaks = [10, 15, 20, 25]; // 1-indexed: these are the LAST index for each tier (Tier 1: 1-10, Tier 2: 11-15, etc)
+
     players = lines.map((line, index) => {
       const parts = line.trim().split(/\s+/);
       const tag = parts.pop();
@@ -185,8 +188,11 @@ function handleFileSubmit() {
         else if (tag.includes("QB")) position = "QB";
         else if (tag.includes("TE")) position = "TE";
       }
-      // Default: split top 5 tiers by index, rest as last
-      let tier = 1 + Math.floor(index / Math.ceil(lines.length / NUM_TIERS));
+      // Assign tier by index
+      let tier = 1;
+      for (let i = 0; i < breaks.length; i++) {
+        if (index >= breaks[i]) tier++;
+      }
       if (tier > NUM_TIERS) tier = NUM_TIERS;
       return {
         id: index + 1,
@@ -430,7 +436,7 @@ function filterByPosition(pos) {
 
 function resetAll() {
   if (!confirm("Are you sure you want to reset everything?")) return;
-  players = players.map(p => ({
+  players = players.map((p, i) => ({
     ...p,
     drafted: false,
     draftedBy: null,
@@ -523,7 +529,7 @@ function setupDraft() {
   renderTable();
 }
 
-// --- INIT ---
+// Init
 populateTeamCountOptions();
 generateTeamNameInputs();
 loadAll();
