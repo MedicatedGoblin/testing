@@ -1,4 +1,4 @@
-console.log("main.js loaded!");
+console.log("main.js loaded!"); // Diagnostic marker
 
 let players = [];
 let currentFilter = "ALL";
@@ -7,8 +7,7 @@ let currentPick = 0;
 let teamNames = [];
 let myTeamIndex = -1;
 
-// Persistent global tier breaks!
-const NUM_TIERS = 6;
+const NUM_TIERS = 6; // 6 breaks, 5 tiers
 let tierBreaks = null;
 
 const fileInput = document.getElementById("fileInput");
@@ -41,20 +40,19 @@ function getVisiblePlayers() {
 
 function renderTable() {
   const visiblePlayers = getVisiblePlayers();
+  console.log("RENDER TABLE - visiblePlayers.length:", visiblePlayers.length, "tierBreaks:", JSON.stringify(tierBreaks));
 
-  // LOG: state before render
-  console.log("RENDER TABLE with tierBreaks:", JSON.stringify(tierBreaks), "visiblePlayers.length:", visiblePlayers.length);
-
-  // Only reset if necessary
+  // Only reset tierBreaks if needed
   if (
     !Array.isArray(tierBreaks) ||
     tierBreaks.length === 0 ||
     tierBreaks[tierBreaks.length - 1] !== visiblePlayers.length
   ) {
     tierBreaks = getTierBreaks(visiblePlayers.length);
-    console.log("RESET tierBreaks! Now:", JSON.stringify(tierBreaks));
+    console.log("RESET tierBreaks!", tierBreaks);
   }
-  // Clean up breaks: strictly increasing, no dups, in bounds
+
+  // Clean breaks
   tierBreaks = tierBreaks
     .filter((b, i, arr) => b > 0 && b <= visiblePlayers.length && (i === 0 || b > arr[i-1]))
     .sort((a, b) => a - b);
@@ -62,6 +60,7 @@ function renderTable() {
     tierBreaks[tierBreaks.length-1] = visiblePlayers.length;
   }
 
+  // Clear
   tableBody.innerHTML = "";
   document.getElementById("myQB").innerHTML = "";
   document.getElementById("myRB").innerHTML = "";
@@ -71,7 +70,7 @@ function renderTable() {
   let tierNum = 1;
   let tierBreakIdx = 0;
   for (let i = 0; i <= visiblePlayers.length; i++) {
-    // Draw divider above 1st and each tier break
+    // Draw divider above 1st player and at every tier break
     if (i === 0 || (tierBreakIdx < tierBreaks.length && i === tierBreaks[tierBreakIdx])) {
       console.log("Drawing tier", tierNum, "at i =", i, "tierBreaks =", JSON.stringify(tierBreaks));
       const tr = document.createElement("tr");
@@ -89,7 +88,7 @@ function renderTable() {
       label.className = "tier-divider-label";
       label.textContent = `Tier ${tierNum}`;
 
-      // Show up/down arrows for Tiers 2+
+      // Up/down arrows for Tiers 2+
       if (tierNum > 1 && tierNum <= tierBreaks.length) {
         // UP arrow
         const upArrow = document.createElement("button");
@@ -190,7 +189,7 @@ function moveTier(tierIdx, direction) {
   renderTable();
 }
 
-// (All your other unchanged draft/team logic below...)
+// (Everything else is unchanged...)
 
 function handleFileSubmit() {
   if (!fileInput.files.length) {
