@@ -1,3 +1,5 @@
+console.log("main.js loaded! (player tier model)");
+
 let players = [];
 let currentFilter = "ALL";
 let draftOrder = [];
@@ -5,9 +7,7 @@ let currentPick = 0;
 let teamNames = [];
 let myTeamIndex = -1;
 
-// 6 breaks = 5 tiers (but last break is always at end of players)
 const NUM_TIERS = 6;
-let tierBreaks = null;
 
 const fileInput = document.getElementById("fileInput");
 const submitFileBtn = document.getElementById("submitFileBtn");
@@ -21,57 +21,35 @@ const startDraftBtn = document.getElementById("startDraftBtn");
 const currentPickDisplay = document.getElementById("currentPickDisplay");
 const teamNamesContainer = document.getElementById("teamNames");
 
-function getTierBreaks(numPlayers) {
-  // 1, 5, 10, 15, 20, 25 and always the end
-  let breaks = [1, 5, 10, 15, 20, 25].filter(b => b <= numPlayers);
-  if (!breaks.includes(numPlayers)) breaks.push(numPlayers);
-  return breaks;
-}
-
 function getVisiblePlayers() {
   const keyword = searchInput.value.toLowerCase();
   const hidePicked = document.getElementById("hidePickedCheckbox").checked;
-  return players.filter(player => {
-    const matchesFilter = currentFilter === "ALL" || player.position === currentFilter;
-    const matchesSearch = player.name.toLowerCase().includes(keyword);
-    return matchesFilter && matchesSearch && (!hidePicked || !player.drafted);
-  });
-}
-
-// Only set/reset tierBreaks on file upload/reset!
-function initializeTierBreaks() {
-  tierBreaks = getTierBreaks(players.length);
+  return players
+    .filter(player => {
+      const matchesFilter = currentFilter === "ALL" || player.position === currentFilter;
+      const matchesSearch = player.name.toLowerCase().includes(keyword);
+      return matchesFilter && matchesSearch && (!hidePicked || !player.drafted);
+    })
+    .sort((a, b) => {
+      if (a.tier !== b.tier) return a.tier - b.tier;
+      return a.id - b.id;
+    });
 }
 
 function renderTable() {
   const visiblePlayers = getVisiblePlayers();
-  // Only initialize tierBreaks if they're missing (should rarely run)
-  if (!Array.isArray(tierBreaks) || tierBreaks.length === 0) {
-    initializeTierBreaks();
-  }
-
-  // Clean up tierBreaks for sort/order/positive only (no bounds checking vs. visiblePlayers here!)
-  tierBreaks = tierBreaks.filter((b, i, arr) => b > 0 && (i === 0 || b > arr[i-1])).sort((a, b) => a - b);
-
   tableBody.innerHTML = "";
   document.getElementById("myQB").innerHTML = "";
   document.getElementById("myRB").innerHTML = "";
   document.getElementById("myWR").innerHTML = "";
   document.getElementById("myTE").innerHTML = "";
 
-  let globalPlayerIndex = 0; // always indexes into players
-  let visibleIdx = 0; // indexes into visiblePlayers
-  let tierNum = 1;
-  let tierBreakIdx = 0;
+  let lastTier = null;
+  for (let i = 0; i < visiblePlayers.length; i++) {
+    const player = visiblePlayers[i];
 
-  // We'll draw tiers based on the globalPlayerIndex (real player index in 'players')
-  for (let i = 0; i <= visiblePlayers.length; i++) {
-    // Figure out the real player index in players[]
-    let player = visiblePlayers[i];
-    let globalIdx = player ? players.findIndex(p => p.id === player.id) : players.length;
-
-    // If at the beginning, or if globalIdx matches a tier break, draw the divider
-    if (i === 0 || (tierBreakIdx < tierBreaks.length && globalIdx === tierBreaks[tierBreakIdx])) {
+    // Draw a divider if new tier
+    if (player.tier !== lastTier) {
       const tr = document.createElement("tr");
       tr.className = "tier-divider-tr";
       const td = document.createElement("td");
@@ -82,111 +60,107 @@ function renderTable() {
       bar.className = "tier-divider-bar";
       const barInner = document.createElement("div");
       barInner.className = "tier-divider-bar-inner";
-
       const label = document.createElement("span");
       label.className = "tier-divider-label";
-      label.textContent = `Tier ${tierNum}`;
-
-      // Only tiers 2+ get arrows (can't move tier 1)
-      if (tierNum > 1 && tierNum <= tierBreaks.length) {
-        // UP
-        const upArrow = document.createElement("button");
-        upArrow.textContent = "▲";
-        upArrow.className = "tier-arrow";
-        const minUp = tierBreaks[tierNum - 2] + 1;
-        upArrow.disabled = (tierBreaks[tierNum - 1] <= minUp);
-        upArrow.onclick = () => moveTier(tierNum - 1, -1);
-
-        // DOWN
-        const downArrow = document.createElement("button");
-        downArrow.textContent = "▼";
-        downArrow.className = "tier-arrow";
-        const maxDown = (tierNum === tierBreaks.length) ? players.length : tierBreaks[tierNum];
-        downArrow.disabled = (tierBreaks[tierNum - 1] >= maxDown - 1);
-        downArrow.onclick = () => moveTier(tierNum - 1, 1);
-
-        bar.appendChild(upArrow);
-        bar.appendChild(downArrow);
-      }
-
+      label.textContent = `Tier ${player.tier}`;
       bar.appendChild(barInner);
       bar.appendChild(label);
 
       td.appendChild(bar);
       tr.appendChild(td);
       tableBody.appendChild(tr);
-      tierNum++;
-      if (i > 0) tierBreakIdx++;
+
+      lastTier = player.tier;
     }
 
-    if (i < visiblePlayers.length) {
-      // Player row
-      const tr = document.createElement("tr");
-      tr.classList.add(visiblePlayers[i].position);
-      if (visiblePlayers[i].drafted) tr.classList.add("strikethrough");
-      if (visiblePlayers[i].draftedBy === teamNames[myTeamIndex]) tr.classList.add("highlight");
-      if (visiblePlayers[i].pickNumber === currentPick && visiblePlayers[i].draftedBy !== teamNames[myTeamIndex]) tr.classList.add("recent-pick");
-      tr.addEventListener("dblclick", () => {
-        toggleDrafted(visiblePlayers[i].id);
-      });
+    // Player row
+    const tr = document.createElement("tr");
+    tr.classList.add(player.position);
+    if (player.drafted) tr.classList.add("strikethrough");
+    if (player.draftedBy === teamNames[myTeamIndex]) tr.classList.add("highlight");
+    if (player.pickNumber === currentPick && player.draftedBy !== teamNames[myTeamIndex]) tr.classList.add("recent-pick");
+    tr.addEventListener("dblclick", () => {
+      toggleDrafted(player.id);
+    });
 
-      const cbCell = document.createElement("td");
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.checked = visiblePlayers[i].drafted;
-      cb.dataset.id = visiblePlayers[i].id;
-      cb.addEventListener("change", () => {
-        toggleDrafted(visiblePlayers[i].id);
-      });
-      cbCell.appendChild(cb);
+    // Checkbox
+    const cbCell = document.createElement("td");
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = player.drafted;
+    cb.dataset.id = player.id;
+    cb.addEventListener("change", () => {
+      toggleDrafted(player.id);
+    });
+    cbCell.appendChild(cb);
 
-      const numCell = document.createElement("td");
-      numCell.textContent = visiblePlayers[i].id;
+    // Number
+    const numCell = document.createElement("td");
+    numCell.textContent = player.id;
 
-      const nameCell = document.createElement("td");
-      nameCell.textContent = visiblePlayers[i].name;
-      if (tr.classList.contains("recent-pick")) {
-        const pickNumberBox = document.createElement("span");
-        pickNumberBox.className = "pick-number-box";
-        pickNumberBox.textContent = `Pick ${visiblePlayers[i].pickNumber}`;
-        nameCell.appendChild(pickNumberBox);
+    // Name & arrows
+    const nameCell = document.createElement("td");
+    nameCell.textContent = player.name;
+    if (tr.classList.contains("recent-pick")) {
+      const pickNumberBox = document.createElement("span");
+      pickNumberBox.className = "pick-number-box";
+      pickNumberBox.textContent = `Pick ${player.pickNumber}`;
+      nameCell.appendChild(pickNumberBox);
+    }
+
+    // UP/DOWN tier arrows
+    const arrowUp = document.createElement("button");
+    arrowUp.textContent = "▲";
+    arrowUp.className = "player-tier-arrow";
+    arrowUp.disabled = player.tier <= 1;
+    arrowUp.onclick = (e) => {
+      e.stopPropagation();
+      if (player.tier > 1) {
+        player.tier -= 1;
+        saveAll();
+        renderTable();
       }
+    };
 
-      const posCell = document.createElement("td");
-      posCell.textContent = visiblePlayers[i].position;
-      const draftedByCell = document.createElement("td");
-      draftedByCell.textContent = visiblePlayers[i].draftedBy || "";
-
-      tr.appendChild(cbCell);
-      tr.appendChild(numCell);
-      tr.appendChild(nameCell);
-      tr.appendChild(posCell);
-      tr.appendChild(draftedByCell);
-
-      tableBody.appendChild(tr);
-
-      // My picks
-      if (visiblePlayers[i].draftedBy === teamNames[myTeamIndex]) {
-        const li = document.createElement("li");
-        li.textContent = `${visiblePlayers[i].name} (${visiblePlayers[i].tag})`;
-        document.getElementById("my" + visiblePlayers[i].position).appendChild(li);
+    const arrowDown = document.createElement("button");
+    arrowDown.textContent = "▼";
+    arrowDown.className = "player-tier-arrow";
+    arrowDown.disabled = player.tier >= NUM_TIERS;
+    arrowDown.onclick = (e) => {
+      e.stopPropagation();
+      if (player.tier < NUM_TIERS) {
+        player.tier += 1;
+        saveAll();
+        renderTable();
       }
+    };
+
+    // Put arrows at start of name cell for visibility
+    nameCell.prepend(arrowDown);
+    nameCell.prepend(arrowUp);
+
+    // Position, Drafted By
+    const posCell = document.createElement("td");
+    posCell.textContent = player.position;
+    const draftedByCell = document.createElement("td");
+    draftedByCell.textContent = player.draftedBy || "";
+
+    tr.appendChild(cbCell);
+    tr.appendChild(numCell);
+    tr.appendChild(nameCell);
+    tr.appendChild(posCell);
+    tr.appendChild(draftedByCell);
+
+    tableBody.appendChild(tr);
+
+    // My picks
+    if (player.draftedBy === teamNames[myTeamIndex]) {
+      const li = document.createElement("li");
+      li.textContent = `${player.name} (${player.tag})`;
+      document.getElementById("my" + player.position).appendChild(li);
     }
   }
 }
-
-function moveTier(idx, dir) {
-  // idx is index in tierBreaks
-  if (idx <= 0 || idx >= tierBreaks.length) return;
-  const prev = tierBreaks[idx - 1];
-  const next = (idx === tierBreaks.length - 1) ? players.length : tierBreaks[idx + 1];
-  let newPos = tierBreaks[idx] + dir;
-  if (newPos <= prev || newPos >= next) return;
-  tierBreaks[idx] = newPos;
-  renderTable();
-}
-
-// -- Rest of your unchanged logic below --
 
 function handleFileSubmit() {
   if (!fileInput.files.length) {
@@ -211,6 +185,9 @@ function handleFileSubmit() {
         else if (tag.includes("QB")) position = "QB";
         else if (tag.includes("TE")) position = "TE";
       }
+      // Default: split top 5 tiers by index, rest as last
+      let tier = 1 + Math.floor(index / Math.ceil(lines.length / NUM_TIERS));
+      if (tier > NUM_TIERS) tier = NUM_TIERS;
       return {
         id: index + 1,
         name,
@@ -219,12 +196,12 @@ function handleFileSubmit() {
         drafted: false,
         draftedBy: null,
         pickNumber: null,
+        tier
       };
     }).filter(p => p.name && p.tag);
 
     currentPick = 0;
     draftOrder = [];
-    initializeTierBreaks();
     saveAll();
     renderTable();
     updateCurrentPickDisplay();
@@ -239,7 +216,6 @@ function removePlayerFile() {
   players = [];
   draftOrder = [];
   currentPick = 0;
-  initializeTierBreaks();
   saveAll();
   renderTable();
   updateCurrentPickDisplay();
@@ -459,6 +435,7 @@ function resetAll() {
     drafted: false,
     draftedBy: null,
     pickNumber: null,
+    tier: 1
   }));
   currentPick = 0;
   draftOrder = [];
@@ -471,7 +448,6 @@ function resetAll() {
   startDraftBtn.disabled = true;
   localStorage.clear();
   generateTeamNameInputs();
-  initializeTierBreaks();
   renderTable();
   updateCurrentPickDisplay();
   clearFileInput();
@@ -551,7 +527,6 @@ function setupDraft() {
 populateTeamCountOptions();
 generateTeamNameInputs();
 loadAll();
-initializeTierBreaks(); // <--- This line ensures tierBreaks are always set at init
 renderTable();
 updateCurrentPickDisplay();
 validateStartDraftButton();
