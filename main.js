@@ -376,10 +376,192 @@ teamCountSelect.addEventListener("change", () => {
   validateStartDraftButton();
 });
 
-// Add your toggleDrafted, saveAll, loadAll, filterByPosition, updateCurrentPickDisplay, validateStartDraftButton, setupDraft from your previous code below here
-// --- INSERT ALL YOUR EXISTING "HELPER" FUNCTIONS HERE ---
-// For brevity, I won’t repeat them unless you want me to paste everything out, but you must keep ALL these.
+function toggleDrafted(id) {
+  const player = players.find(p => p.id === id);
+  if (!player) return;
 
+  if (!player.drafted) {
+    if (currentPick >= draftOrder.length) {
+      alert("All picks completed!");
+      return;
+    }
+    player.drafted = true;
+    const teamIndex = draftOrder[currentPick];
+    player.draftedBy = teamNames[teamIndex];
+    player.pickNumber = currentPick + 1;
+    currentPick++;
+  } else {
+    if (player.pickNumber === currentPick) {
+      player.drafted = false;
+      player.draftedBy = null;
+      player.pickNumber = null;
+      currentPick--;
+    } else if (player.pickNumber < currentPick) {
+      alert("You can only undo the most recent pick.");
+      return;
+    }
+  }
+
+  updateCurrentPickDisplay();
+  saveAll();
+  renderTable();
+}
+
+function saveAll() {
+  localStorage.setItem("players", JSON.stringify(players));
+  localStorage.setItem("teamNames", JSON.stringify(teamNames));
+  localStorage.setItem("draftOrder", JSON.stringify(draftOrder));
+  localStorage.setItem("currentPick", currentPick);
+  localStorage.setItem("myTeamIndex", myTeamIndex);
+  localStorage.setItem("teamCount", teamCountSelect.value);
+  localStorage.setItem("yourTeamSelect", yourTeamSelect.value);
+}
+
+function loadAll() {
+  const storedPlayers = localStorage.getItem("players");
+  if (storedPlayers) players = JSON.parse(storedPlayers);
+
+  const storedTeamNames = localStorage.getItem("teamNames");
+  if (storedTeamNames) teamNames = JSON.parse(storedTeamNames);
+
+  const storedDraftOrder = localStorage.getItem("draftOrder");
+  if (storedDraftOrder) draftOrder = JSON.parse(storedDraftOrder);
+
+  const storedCurrentPick = localStorage.getItem("currentPick");
+  if (storedCurrentPick) currentPick = parseInt(storedCurrentPick, 10);
+
+  const storedMyTeamIndex = localStorage.getItem("myTeamIndex");
+  if (storedMyTeamIndex) myTeamIndex = parseInt(storedMyTeamIndex, 10);
+
+  const storedTeamCount = localStorage.getItem("teamCount");
+  if (storedTeamCount) teamCountSelect.value = storedTeamCount;
+  else teamCountSelect.value = "10";
+
+  generateTeamNameInputs();
+
+  for (let i = 0; i < teamNames.length; i++) {
+    const input = document.getElementById(`teamName${i}`);
+    if (input) input.value = teamNames[i] || "";
+  }
+
+  syncYourTeamSelectOptions();
+
+  if (myTeamIndex >= 0 && yourTeamSelect.querySelector(`option[value="${myTeamIndex}"]`)) {
+    yourTeamSelect.value = myTeamIndex;
+    myPickSelect.innerHTML = "";
+    const option = document.createElement("option");
+    option.value = myTeamIndex + 1;
+    option.textContent = myTeamIndex + 1;
+    myPickSelect.appendChild(option);
+    myPickSelect.value = option.value;
+    myPickSelect.disabled = true;
+    startDraftBtn.disabled = false;
+  } else {
+    yourTeamSelect.value = "";
+    myTeamIndex = -1;
+    myPickSelect.innerHTML = "";
+    myPickSelect.disabled = true;
+    startDraftBtn.disabled = true;
+  }
+}
+
+function filterByPosition(pos) {
+  currentFilter = pos;
+  renderTable();
+}
+
+function updateCurrentPickDisplay() {
+  if (currentPick >= draftOrder.length) {
+    currentPickDisplay.textContent = "Draft Complete!";
+    startDraftBtn.disabled = true;
+    return;
+  }
+  const teamIndex = draftOrder[currentPick];
+  const teamName = teamNames[teamIndex] || "";
+  currentPickDisplay.textContent = `Pick ${currentPick + 1} - ${teamName}`;
+}
+
+function validateStartDraftButton() {
+  let valid = true;
+
+  // Clear all previous errors first
+  fileInput.classList.remove("error");
+  submitFileBtn.classList.remove("error");
+  startDraftBtn.classList.remove("error");
+  yourTeamSelect.classList.remove("error");
+
+  // Validate team names: all must be non-empty
+  const teamCount = parseInt(teamCountSelect.value, 10);
+  let teamsValid = true;
+  for (let i = 0; i < teamCount; i++) {
+    const input = document.getElementById(`teamName${i}`);
+    if (!input || input.value.trim() === "") {
+      input?.classList.add("error");
+      teamsValid = false;
+      valid = false;
+    } else {
+      input.classList.remove("error");
+    }
+  }
+
+  if (!teamsValid) valid = false;
+
+  // Validate your team selected
+  if (yourTeamSelect.value === "" || yourTeamSelect.value === null) {
+    yourTeamSelect.classList.add("error");
+    valid = false;
+  } else {
+    yourTeamSelect.classList.remove("error");
+  }
+
+  // Validate player list loaded (file submitted)
+  if (players.length === 0) {
+    fileInput.classList.add("error");
+    submitFileBtn.classList.add("error");
+    valid = false;
+  } else {
+    fileInput.classList.remove("error");
+    submitFileBtn.classList.remove("error");
+  }
+
+  startDraftBtn.disabled = !valid;
+}
+
+function setupDraft() {
+  validateStartDraftButton();
+  if (startDraftBtn.disabled) {
+    alert("Please fix the highlighted errors before starting the draft.");
+    return;
+  }
+
+  const namesSet = new Set();
+  for (const name of teamNames) {
+    if (!name) {
+      alert("All teams must have a name.");
+      return;
+    }
+    if (namesSet.has(name.toLowerCase())) {
+      alert("Team names must be unique.");
+      return;
+    }
+    namesSet.add(name.toLowerCase());
+  }
+
+  const teamCount = parseInt(teamCountSelect.value, 10);
+  draftOrder = [];
+  let forward = true;
+  for (let round = 0; round < 20; round++) {
+    const roundOrder = Array.from({ length: teamCount }, (_, i) => i);
+    draftOrder.push(...(forward ? roundOrder : roundOrder.reverse()));
+    forward = !forward;
+  }
+
+  if (currentPick >= draftOrder.length) currentPick = 0; // reset if draft finished previously
+
+  updateCurrentPickDisplay();
+  saveAll();
+  renderTable();
+}
 
 // --- INIT ---
 populateTeamCountOptions();
