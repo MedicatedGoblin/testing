@@ -1,4 +1,4 @@
-console.log("main.js loaded!"); // Diagnostic marker
+console.log("main.js loaded!"); // Debug marker
 
 let players = [];
 let currentFilter = "ALL";
@@ -7,7 +7,8 @@ let currentPick = 0;
 let teamNames = [];
 let myTeamIndex = -1;
 
-const NUM_TIERS = 6; // 6 breaks, 5 tiers
+// 6 breaks = 5 tiers (but last break is always at end of players)
+const NUM_TIERS = 6;
 let tierBreaks = null;
 
 const fileInput = document.getElementById("fileInput");
@@ -23,6 +24,7 @@ const currentPickDisplay = document.getElementById("currentPickDisplay");
 const teamNamesContainer = document.getElementById("teamNames");
 
 function getTierBreaks(numPlayers) {
+  // 1, 5, 10, 15, 20, 25 and always the end
   let breaks = [1, 5, 10, 15, 20, 25].filter(b => b <= numPlayers);
   if (!breaks.includes(numPlayers)) breaks.push(numPlayers);
   return breaks;
@@ -38,39 +40,40 @@ function getVisiblePlayers() {
   });
 }
 
+// Only set/reset tierBreaks on file upload/reset!
+function initializeTierBreaks() {
+  tierBreaks = getTierBreaks(players.length);
+}
+
 function renderTable() {
   const visiblePlayers = getVisiblePlayers();
-  console.log("RENDER TABLE - visiblePlayers.length:", visiblePlayers.length, "tierBreaks:", JSON.stringify(tierBreaks));
-
-  // Only reset tierBreaks if needed (not every time!)
-  if (
-    !Array.isArray(tierBreaks) ||
-    tierBreaks.length === 0
-  ) {
-    tierBreaks = getTierBreaks(players.length); // Important: use all players, not visible players
-    console.log("RESET tierBreaks!", tierBreaks);
+  // Only initialize tierBreaks if they're missing (should rarely run)
+  if (!Array.isArray(tierBreaks) || tierBreaks.length === 0) {
+    initializeTierBreaks();
   }
 
-  // Clean breaks: Only ensure no negatives and increasing order.
-  tierBreaks = tierBreaks
-    .filter((b, i, arr) => b > 0 && (i === 0 || b > arr[i-1]))
-    .sort((a, b) => a - b);
+  // Clean up tierBreaks for sort/order/positive only (no bounds checking vs. visiblePlayers here!)
+  tierBreaks = tierBreaks.filter((b, i, arr) => b > 0 && (i === 0 || b > arr[i-1])).sort((a, b) => a - b);
 
-  // Do NOT forcibly set last break to visiblePlayers.length!
-
-  // Clear
   tableBody.innerHTML = "";
   document.getElementById("myQB").innerHTML = "";
   document.getElementById("myRB").innerHTML = "";
   document.getElementById("myWR").innerHTML = "";
   document.getElementById("myTE").innerHTML = "";
 
+  let globalPlayerIndex = 0; // always indexes into players
+  let visibleIdx = 0; // indexes into visiblePlayers
   let tierNum = 1;
   let tierBreakIdx = 0;
+
+  // We'll draw tiers based on the globalPlayerIndex (real player index in 'players')
   for (let i = 0; i <= visiblePlayers.length; i++) {
-    // Draw divider above 1st player and at every tier break
-    if (i === 0 || (tierBreakIdx < tierBreaks.length && i === tierBreaks[tierBreakIdx])) {
-      console.log("Drawing tier", tierNum, "at i =", i, "tierBreaks =", JSON.stringify(tierBreaks));
+    // Figure out the real player index in players[]
+    let player = visiblePlayers[i];
+    let globalIdx = player ? players.findIndex(p => p.id === player.id) : players.length;
+
+    // If at the beginning, or if globalIdx matches a tier break, draw the divider
+    if (i === 0 || (tierBreakIdx < tierBreaks.length && globalIdx === tierBreaks[tierBreakIdx])) {
       const tr = document.createElement("tr");
       tr.className = "tier-divider-tr";
       const td = document.createElement("td");
@@ -86,9 +89,9 @@ function renderTable() {
       label.className = "tier-divider-label";
       label.textContent = `Tier ${tierNum}`;
 
-      // Up/down arrows for Tiers 2+
+      // Only tiers 2+ get arrows (can't move tier 1)
       if (tierNum > 1 && tierNum <= tierBreaks.length) {
-        // UP arrow
+        // UP
         const upArrow = document.createElement("button");
         upArrow.textContent = "▲";
         upArrow.className = "tier-arrow";
@@ -96,7 +99,7 @@ function renderTable() {
         upArrow.disabled = (tierBreaks[tierNum - 1] <= minUp);
         upArrow.onclick = () => moveTier(tierNum - 1, -1);
 
-        // DOWN arrow
+        // DOWN
         const downArrow = document.createElement("button");
         downArrow.textContent = "▼";
         downArrow.className = "tier-arrow";
@@ -118,44 +121,43 @@ function renderTable() {
       if (i > 0) tierBreakIdx++;
     }
 
-    // Player row
     if (i < visiblePlayers.length) {
-      const player = visiblePlayers[i];
+      // Player row
       const tr = document.createElement("tr");
-      tr.classList.add(player.position);
-      if (player.drafted) tr.classList.add("strikethrough");
-      if (player.draftedBy === teamNames[myTeamIndex]) tr.classList.add("highlight");
-      if (player.pickNumber === currentPick && player.draftedBy !== teamNames[myTeamIndex]) tr.classList.add("recent-pick");
+      tr.classList.add(visiblePlayers[i].position);
+      if (visiblePlayers[i].drafted) tr.classList.add("strikethrough");
+      if (visiblePlayers[i].draftedBy === teamNames[myTeamIndex]) tr.classList.add("highlight");
+      if (visiblePlayers[i].pickNumber === currentPick && visiblePlayers[i].draftedBy !== teamNames[myTeamIndex]) tr.classList.add("recent-pick");
       tr.addEventListener("dblclick", () => {
-        toggleDrafted(player.id);
+        toggleDrafted(visiblePlayers[i].id);
       });
 
       const cbCell = document.createElement("td");
       const cb = document.createElement("input");
       cb.type = "checkbox";
-      cb.checked = player.drafted;
-      cb.dataset.id = player.id;
+      cb.checked = visiblePlayers[i].drafted;
+      cb.dataset.id = visiblePlayers[i].id;
       cb.addEventListener("change", () => {
-        toggleDrafted(player.id);
+        toggleDrafted(visiblePlayers[i].id);
       });
       cbCell.appendChild(cb);
 
       const numCell = document.createElement("td");
-      numCell.textContent = player.id;
+      numCell.textContent = visiblePlayers[i].id;
 
       const nameCell = document.createElement("td");
-      nameCell.textContent = player.name;
+      nameCell.textContent = visiblePlayers[i].name;
       if (tr.classList.contains("recent-pick")) {
         const pickNumberBox = document.createElement("span");
         pickNumberBox.className = "pick-number-box";
-        pickNumberBox.textContent = `Pick ${player.pickNumber}`;
+        pickNumberBox.textContent = `Pick ${visiblePlayers[i].pickNumber}`;
         nameCell.appendChild(pickNumberBox);
       }
 
       const posCell = document.createElement("td");
-      posCell.textContent = player.position;
+      posCell.textContent = visiblePlayers[i].position;
       const draftedByCell = document.createElement("td");
-      draftedByCell.textContent = player.draftedBy || "";
+      draftedByCell.textContent = visiblePlayers[i].draftedBy || "";
 
       tr.appendChild(cbCell);
       tr.appendChild(numCell);
@@ -165,28 +167,28 @@ function renderTable() {
 
       tableBody.appendChild(tr);
 
-      if (player.draftedBy === teamNames[myTeamIndex]) {
+      // My picks
+      if (visiblePlayers[i].draftedBy === teamNames[myTeamIndex]) {
         const li = document.createElement("li");
-        li.textContent = `${player.name} (${player.tag})`;
-        document.getElementById("my" + player.position).appendChild(li);
+        li.textContent = `${visiblePlayers[i].name} (${visiblePlayers[i].tag})`;
+        document.getElementById("my" + visiblePlayers[i].position).appendChild(li);
       }
     }
   }
 }
 
-function moveTier(tierIdx, direction) {
-  console.log("moveTier CALLED", tierIdx, direction, JSON.stringify(tierBreaks));
-  if (tierIdx <= 0 || tierIdx >= tierBreaks.length) return;
-  const prevBreak = tierBreaks[tierIdx - 1];
-  const nextBreak = (tierIdx === tierBreaks.length - 1) ? players.length : tierBreaks[tierIdx + 1];
-  let newPos = tierBreaks[tierIdx] + direction;
-  if (newPos <= prevBreak || newPos >= nextBreak) return;
-  tierBreaks[tierIdx] = newPos;
-  console.log("After update:", JSON.stringify(tierBreaks));
+function moveTier(idx, dir) {
+  // idx is index in tierBreaks
+  if (idx <= 0 || idx >= tierBreaks.length) return;
+  const prev = tierBreaks[idx - 1];
+  const next = (idx === tierBreaks.length - 1) ? players.length : tierBreaks[idx + 1];
+  let newPos = tierBreaks[idx] + dir;
+  if (newPos <= prev || newPos >= next) return;
+  tierBreaks[idx] = newPos;
   renderTable();
 }
 
-// Everything else unchanged...
+// -- Rest of your unchanged logic below --
 
 function handleFileSubmit() {
   if (!fileInput.files.length) {
@@ -224,7 +226,7 @@ function handleFileSubmit() {
 
     currentPick = 0;
     draftOrder = [];
-    tierBreaks = getTierBreaks(players.length); // <-- Initialize for new player list!
+    initializeTierBreaks();
     saveAll();
     renderTable();
     updateCurrentPickDisplay();
@@ -239,7 +241,7 @@ function removePlayerFile() {
   players = [];
   draftOrder = [];
   currentPick = 0;
-  tierBreaks = getTierBreaks(0);
+  initializeTierBreaks();
   saveAll();
   renderTable();
   updateCurrentPickDisplay();
@@ -471,7 +473,7 @@ function resetAll() {
   startDraftBtn.disabled = true;
   localStorage.clear();
   generateTeamNameInputs();
-  tierBreaks = getTierBreaks(players.length); // Re-init for empty
+  initializeTierBreaks();
   renderTable();
   updateCurrentPickDisplay();
   clearFileInput();
@@ -551,6 +553,7 @@ function setupDraft() {
 populateTeamCountOptions();
 generateTeamNameInputs();
 loadAll();
+initializeTierBreaks(); // <--- This line ensures tierBreaks are always set at init
 renderTable();
 updateCurrentPickDisplay();
 validateStartDraftButton();
