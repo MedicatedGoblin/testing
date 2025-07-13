@@ -1,3 +1,5 @@
+// MAIN.JS -- Clean, Animated Tier System with Hover "Add Tier" Bars
+
 let players = [];
 let currentFilter = "ALL";
 let draftOrder = [];
@@ -5,8 +7,7 @@ let currentPick = 0;
 let teamNames = [];
 let myTeamIndex = -1;
 
-// Tier system: each entry is a player index (before which to insert a tier break)
-let tierBreaks = [];
+let tierBreaks = []; // stores player index where each tier starts (first tier always at 0)
 
 const fileInput = document.getElementById("fileInput");
 const submitFileBtn = document.getElementById("submitFileBtn");
@@ -32,152 +33,318 @@ function getVisiblePlayers() {
 
 function renderTable() {
   const visiblePlayers = getVisiblePlayers();
+
+  // If no tierBreaks or number of players changed, initialize evenly
+  if (!Array.isArray(tierBreaks) || tierBreaks.length === 0 || tierBreaks[tierBreaks.length-1] !== visiblePlayers.length) {
+    const n = visiblePlayers.length;
+    const defaultBreaks = [];
+    for (let i = 0; i < n; i += 5) defaultBreaks.push(i);
+    if (defaultBreaks[defaultBreaks.length - 1] !== n) defaultBreaks.push(n);
+    tierBreaks = defaultBreaks;
+  }
+  // Remove any breaks out of bounds
+  tierBreaks = tierBreaks.filter(b => b >= 0 && b <= visiblePlayers.length);
+  if (tierBreaks[0] !== 0) tierBreaks.unshift(0);
+  if (tierBreaks[tierBreaks.length-1] !== visiblePlayers.length) tierBreaks.push(visiblePlayers.length);
+
   tableBody.innerHTML = "";
   document.getElementById("myQB").innerHTML = "";
   document.getElementById("myRB").innerHTML = "";
   document.getElementById("myWR").innerHTML = "";
   document.getElementById("myTE").innerHTML = "";
 
-  // Always render Tier 1 at the top
-  const tier1Tr = document.createElement("tr");
-  tier1Tr.className = "tier-divider-tr";
-  const tier1Td = document.createElement("td");
-  tier1Td.className = "tier-divider-td";
-  tier1Td.colSpan = 6;
-  tier1Td.textContent = "Tier 1";
-  tier1Tr.appendChild(tier1Td);
-  tableBody.appendChild(tier1Tr);
+  // For each tier, render divider, players in tier, and add-tier-bar after each player row
+  for (let t = 0; t < tierBreaks.length - 1; t++) {
+    // Draw tier bar
+    const tierRow = document.createElement("tr");
+    tierRow.className = "tier-divider-tr";
+    const tierTd = document.createElement("td");
+    tierTd.colSpan = 6;
+    tierTd.className = "tier-divider-td";
+    // Tier label
+    const label = document.createElement("span");
+    label.className = "tier-divider-label";
+    label.textContent = `TIER ${t+1}`;
+    tierTd.appendChild(label);
 
-  let tierNum = 2;
-  for (let i = 0; i < visiblePlayers.length; i++) {
-    // Insert tier divider IF tier break exists BEFORE this player
-    if (tierBreaks.includes(i)) {
-      const tr = document.createElement("tr");
-      tr.className = "tier-divider-tr";
-      const td = document.createElement("td");
-      td.className = "tier-divider-td";
-      td.colSpan = 6;
-      td.textContent = `Tier ${tierNum++}`;
-      // Add a remove button
+    // Remove button (not for Tier 1)
+    if (t > 0) {
       const removeBtn = document.createElement("button");
       removeBtn.className = "remove-tier-btn";
-      removeBtn.textContent = "×";
-      removeBtn.title = "Remove this tier break";
+      removeBtn.title = "Remove this tier";
+      removeBtn.innerHTML = "&#10005;";
       removeBtn.onclick = (e) => {
         e.stopPropagation();
-        tierBreaks = tierBreaks.filter(v => v !== i);
-        saveAll();
-        renderTable();
+        removeTierAt(t);
       };
-      td.appendChild(removeBtn);
-      tr.appendChild(td);
-      tableBody.appendChild(tr);
+      tierTd.appendChild(removeBtn);
     }
+    tierRow.appendChild(tierTd);
+    tableBody.appendChild(tierRow);
 
-    // Player row
-    const player = visiblePlayers[i];
-    const tr = document.createElement("tr");
+    // Draw player rows in this tier
+    for (let i = tierBreaks[t]; i < tierBreaks[t+1]; i++) {
+      if (i >= visiblePlayers.length) continue;
+      const player = visiblePlayers[i];
+      const tr = document.createElement("tr");
+      tr.classList.add(player.position);
+      if (player.drafted) tr.classList.add("strikethrough");
+      if (player.draftedBy === teamNames[myTeamIndex]) tr.classList.add("highlight");
+      if (player.pickNumber === currentPick && player.draftedBy !== teamNames[myTeamIndex]) tr.classList.add("recent-pick");
 
-    // Plus cell for new tier
-    const plusCell = document.createElement("td");
-    plusCell.className = "plus-cell";
-    const plusBtn = document.createElement("button");
-    plusBtn.className = "plus-btn";
-    plusBtn.textContent = "+";
-    plusBtn.title = "Insert tier break here";
-    plusBtn.onclick = (e) => {
-      e.stopPropagation();
-      if (!tierBreaks.includes(i)) {
-        tierBreaks.push(i);
-        tierBreaks.sort((a, b) => a - b);
-        saveAll();
-        renderTable();
+      // --- TABLE CELLS ---
+      // Checkbox
+      const cbCell = document.createElement("td");
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = player.drafted;
+      cb.dataset.id = player.id;
+      cb.addEventListener("change", () => { toggleDrafted(player.id); });
+      cbCell.appendChild(cb);
+
+      // Number (update dynamically)
+      const numCell = document.createElement("td");
+      numCell.textContent = (i+1);
+
+      // Name
+      const nameCell = document.createElement("td");
+      nameCell.textContent = player.name;
+      if (tr.classList.contains("recent-pick")) {
+        const pickNumberBox = document.createElement("span");
+        pickNumberBox.className = "pick-number-box";
+        pickNumberBox.textContent = `Pick ${player.pickNumber}`;
+        nameCell.appendChild(pickNumberBox);
       }
-    };
-    plusCell.appendChild(plusBtn);
-    tr.appendChild(plusCell);
 
-    // Checkbox
-    const cbCell = document.createElement("td");
-    const cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.checked = player.drafted;
-    cb.dataset.id = player.id;
-    cb.addEventListener("change", () => {
-      toggleDrafted(player.id);
-    });
-    cbCell.appendChild(cb);
+      // Up/down arrows for player ranking
+      const upArrow = document.createElement("button");
+      upArrow.innerHTML = "&#8593;";
+      upArrow.className = "player-tier-arrow";
+      upArrow.title = "Move player up";
+      upArrow.disabled = (i === 0 || i === tierBreaks[t]);
+      upArrow.onclick = (e) => { e.stopPropagation(); movePlayer(i, i-1); };
 
-    // Number - live
-    const numCell = document.createElement("td");
-    numCell.textContent = i + 1;
+      const downArrow = document.createElement("button");
+      downArrow.innerHTML = "&#8595;";
+      downArrow.className = "player-tier-arrow";
+      downArrow.title = "Move player down";
+      downArrow.disabled = (i === visiblePlayers.length-1 || i === tierBreaks[t+1]-1);
+      downArrow.onclick = (e) => { e.stopPropagation(); movePlayer(i, i+1); };
 
-    // Name & arrows
-    const nameCell = document.createElement("td");
-    nameCell.textContent = player.name;
+      // Add the arrows into a cell
+      const arrowCell = document.createElement("td");
+      arrowCell.appendChild(upArrow);
+      arrowCell.appendChild(downArrow);
 
-    // Up/Down Arrows
-    const arrowUp = document.createElement("button");
-    arrowUp.textContent = "▲";
-    arrowUp.className = "player-tier-arrow";
-    arrowUp.disabled = i === 0;
-    arrowUp.onclick = (e) => {
-      e.stopPropagation();
-      if (i > 0) {
-        const idx1 = players.indexOf(visiblePlayers[i]);
-        const idx2 = players.indexOf(visiblePlayers[i - 1]);
-        if (idx1 !== -1 && idx2 !== -1) {
-          [players[idx1], players[idx2]] = [players[idx2], players[idx1]];
-          saveAll();
-          renderTable();
-        }
+      // Position
+      const posCell = document.createElement("td");
+      posCell.textContent = player.position;
+
+      // Drafted By
+      const draftedByCell = document.createElement("td");
+      draftedByCell.textContent = player.draftedBy || "";
+
+      // Row construction
+      tr.appendChild(cbCell);
+      tr.appendChild(numCell);
+      tr.appendChild(arrowCell);
+      tr.appendChild(nameCell);
+      tr.appendChild(posCell);
+      tr.appendChild(draftedByCell);
+
+      tr.addEventListener("dblclick", () => { toggleDrafted(player.id); });
+      tableBody.appendChild(tr);
+
+      // My picks panel
+      if (player.draftedBy === teamNames[myTeamIndex]) {
+        const li = document.createElement("li");
+        li.textContent = `${player.name} (${player.tag})`;
+        document.getElementById("my" + player.position).appendChild(li);
       }
-    };
 
-    const arrowDown = document.createElement("button");
-    arrowDown.textContent = "▼";
-    arrowDown.className = "player-tier-arrow";
-    arrowDown.disabled = i === visiblePlayers.length - 1;
-    arrowDown.onclick = (e) => {
-      e.stopPropagation();
-      if (i < visiblePlayers.length - 1) {
-        const idx1 = players.indexOf(visiblePlayers[i]);
-        const idx2 = players.indexOf(visiblePlayers[i + 1]);
-        if (idx1 !== -1 && idx2 !== -1) {
-          [players[idx1], players[idx2]] = [players[idx2], players[idx1]];
-          saveAll();
-          renderTable();
-        }
+      // --- ADD TIER BAR (HIDDEN BY DEFAULT, SHOWS ON HOVER) ---
+      // Don't allow add after last player in last tier
+      if (!(t === tierBreaks.length-2 && i === tierBreaks[t+1]-1)) {
+        const addTierTr = document.createElement("tr");
+        addTierTr.className = "add-tier-row";
+        const addTierTd = document.createElement("td");
+        addTierTd.colSpan = 6;
+        // Add Tier Bar (hidden, shown only on hover)
+        const addTierBar = document.createElement("div");
+        addTierBar.className = "add-tier-bar";
+        addTierBar.innerHTML = `<span class="add-tier-label">&#43; Add Tier Here</span>`;
+        addTierBar.onclick = (e) => { e.stopPropagation(); insertTierAt(i+1); };
+        addTierTd.appendChild(addTierBar);
+        addTierTr.appendChild(addTierTd);
+        tableBody.appendChild(addTierTr);
+
+        // Show add bar when mouse is over the player row above
+        tr.addEventListener("mouseenter", () => {
+          addTierBar.classList.add("show");
+        });
+        tr.addEventListener("mouseleave", () => {
+          addTierBar.classList.remove("show");
+        });
+        // Also show when mouse hovers the addTierBar itself
+        addTierBar.addEventListener("mouseenter", () => {
+          addTierBar.classList.add("show");
+        });
+        addTierBar.addEventListener("mouseleave", () => {
+          addTierBar.classList.remove("show");
+        });
       }
-    };
-
-    nameCell.prepend(arrowDown);
-    nameCell.prepend(arrowUp);
-
-    // Position, Drafted By
-    const posCell = document.createElement("td");
-    posCell.textContent = player.position;
-    const draftedByCell = document.createElement("td");
-    draftedByCell.textContent = player.draftedBy || "";
-
-    tr.appendChild(cbCell);
-    tr.appendChild(numCell);
-    tr.appendChild(nameCell);
-    tr.appendChild(posCell);
-    tr.appendChild(draftedByCell);
-
-    tableBody.appendChild(tr);
-
-    // My picks
-    if (player.draftedBy === teamNames[myTeamIndex]) {
-      const li = document.createElement("li");
-      li.textContent = `${player.name} (${player.tag})`;
-      document.getElementById("my" + player.position).appendChild(li);
     }
   }
 }
 
-// --- All the rest of your unchanged draft/team logic below ---
+function insertTierAt(idx) {
+  // Insert a new break at idx if not already a tier start
+  if (!tierBreaks.includes(idx) && idx > 0 && idx < getVisiblePlayers().length) {
+    tierBreaks.push(idx);
+    tierBreaks.sort((a,b) => a-b);
+    renderTable();
+  }
+}
+function removeTierAt(tierIdx) {
+  // Remove tier at tierIdx (cannot remove Tier 1)
+  if (tierIdx === 0) return;
+  tierBreaks.splice(tierIdx, 1);
+  renderTable();
+}
+function movePlayer(fromIdx, toIdx) {
+  if (toIdx < 0 || toIdx >= getVisiblePlayers().length) return;
+  // Move in 'players' not just visiblePlayers!
+  const visible = getVisiblePlayers();
+  const fromPlayer = visible[fromIdx];
+  const toPlayer = visible[toIdx];
+  const fromGlobal = players.findIndex(p => p.id === fromPlayer.id);
+  const toGlobal = players.findIndex(p => p.id === toPlayer.id);
+  // Swap
+  [players[fromGlobal], players[toGlobal]] = [players[toGlobal], players[fromGlobal]];
+  renderTable();
+}
+
+// ========== Your unchanged original logic below =============
+
+// ... (populateTeamCountOptions, generateTeamNameInputs, etc.)
+
+function toggleDrafted(id) {
+  const player = players.find(p => p.id === id);
+  if (!player) return;
+
+  if (!player.drafted) {
+    if (currentPick >= draftOrder.length) {
+      alert("All picks completed!");
+      return;
+    }
+    player.drafted = true;
+    const teamIndex = draftOrder[currentPick];
+    player.draftedBy = teamNames[teamIndex];
+    player.pickNumber = currentPick + 1;
+    currentPick++;
+  } else {
+    if (player.pickNumber === currentPick) {
+      player.drafted = false;
+      player.draftedBy = null;
+      player.pickNumber = null;
+      currentPick--;
+    } else if (player.pickNumber < currentPick) {
+      alert("You can only undo the most recent pick.");
+      return;
+    }
+  }
+
+  updateCurrentPickDisplay();
+  saveAll();
+  renderTable();
+}
+
+function saveAll() {
+  localStorage.setItem("players", JSON.stringify(players));
+  localStorage.setItem("teamNames", JSON.stringify(teamNames));
+  localStorage.setItem("draftOrder", JSON.stringify(draftOrder));
+  localStorage.setItem("currentPick", currentPick);
+  localStorage.setItem("myTeamIndex", myTeamIndex);
+  localStorage.setItem("teamCount", teamCountSelect.value);
+  localStorage.setItem("yourTeamSelect", yourTeamSelect.value);
+}
+
+function loadAll() {
+  const storedPlayers = localStorage.getItem("players");
+  if (storedPlayers) players = JSON.parse(storedPlayers);
+
+  const storedTeamNames = localStorage.getItem("teamNames");
+  if (storedTeamNames) teamNames = JSON.parse(storedTeamNames);
+
+  const storedDraftOrder = localStorage.getItem("draftOrder");
+  if (storedDraftOrder) draftOrder = JSON.parse(storedDraftOrder);
+
+  const storedCurrentPick = localStorage.getItem("currentPick");
+  if (storedCurrentPick) currentPick = parseInt(storedCurrentPick, 10);
+
+  const storedMyTeamIndex = localStorage.getItem("myTeamIndex");
+  if (storedMyTeamIndex) myTeamIndex = parseInt(storedMyTeamIndex, 10);
+
+  const storedTeamCount = localStorage.getItem("teamCount");
+  if (storedTeamCount) teamCountSelect.value = storedTeamCount;
+  else teamCountSelect.value = "10";
+
+  generateTeamNameInputs();
+
+  for (let i = 0; i < teamNames.length; i++) {
+    const input = document.getElementById(`teamName${i}`);
+    if (input) input.value = teamNames[i] || "";
+  }
+
+  syncYourTeamSelectOptions();
+
+  if (myTeamIndex >= 0 && yourTeamSelect.querySelector(`option[value="${myTeamIndex}"]`)) {
+    yourTeamSelect.value = myTeamIndex;
+    myPickSelect.innerHTML = "";
+    const option = document.createElement("option");
+    option.value = myTeamIndex + 1;
+    option.textContent = myTeamIndex + 1;
+    myPickSelect.appendChild(option);
+    myPickSelect.value = option.value;
+    myPickSelect.disabled = true;
+    startDraftBtn.disabled = false;
+  } else {
+    yourTeamSelect.value = "";
+    myTeamIndex = -1;
+    myPickSelect.innerHTML = "";
+    myPickSelect.disabled = true;
+    startDraftBtn.disabled = true;
+  }
+}
+
+function filterByPosition(pos) {
+  currentFilter = pos;
+  renderTable();
+}
+
+function resetAll() {
+  if (!confirm("Are you sure you want to reset everything?")) return;
+  players = players.map(p => ({
+    ...p,
+    drafted: false,
+    draftedBy: null,
+    pickNumber: null,
+  }));
+  currentPick = 0;
+  draftOrder = [];
+  teamNames = [];
+  myTeamIndex = -1;
+  teamCountSelect.value = "10";
+  yourTeamSelect.value = "";
+  myPickSelect.innerHTML = "";
+  myPickSelect.disabled = true;
+  startDraftBtn.disabled = true;
+  localStorage.clear();
+  generateTeamNameInputs();
+  renderTable();
+  updateCurrentPickDisplay();
+  clearFileInput();
+}
 
 function handleFileSubmit() {
   if (!fileInput.files.length) {
@@ -215,7 +382,7 @@ function handleFileSubmit() {
 
     currentPick = 0;
     draftOrder = [];
-    tierBreaks = [];
+    tierBreaks = []; // reset
     saveAll();
     renderTable();
     updateCurrentPickDisplay();
@@ -338,14 +505,15 @@ teamCountSelect.addEventListener("change", () => {
   validateStartDraftButton();
 });
 
+// Validate if draft can start (all teams named, your team selected, file submitted)
 function validateStartDraftButton() {
   let valid = true;
-
   fileInput.classList.remove("error");
   submitFileBtn.classList.remove("error");
   startDraftBtn.classList.remove("error");
   yourTeamSelect.classList.remove("error");
 
+  // Validate team names: all must be non-empty
   const teamCount = parseInt(teamCountSelect.value, 10);
   let teamsValid = true;
   for (let i = 0; i < teamCount; i++) {
@@ -367,7 +535,6 @@ function validateStartDraftButton() {
   } else {
     yourTeamSelect.classList.remove("error");
   }
-
   if (players.length === 0) {
     fileInput.classList.add("error");
     submitFileBtn.classList.add("error");
@@ -376,44 +543,7 @@ function validateStartDraftButton() {
     fileInput.classList.remove("error");
     submitFileBtn.classList.remove("error");
   }
-
   startDraftBtn.disabled = !valid;
-}
-
-function setupDraft() {
-  validateStartDraftButton();
-  if (startDraftBtn.disabled) {
-    alert("Please fix the highlighted errors before starting the draft.");
-    return;
-  }
-
-  const namesSet = new Set();
-  for (const name of teamNames) {
-    if (!name) {
-      alert("All teams must have a name.");
-      return;
-    }
-    if (namesSet.has(name.toLowerCase())) {
-      alert("Team names must be unique.");
-      return;
-    }
-    namesSet.add(name.toLowerCase());
-  }
-
-  const teamCount = parseInt(teamCountSelect.value, 10);
-  draftOrder = [];
-  let forward = true;
-  for (let round = 0; round < 20; round++) {
-    const roundOrder = Array.from({ length: teamCount }, (_, i) => i);
-    draftOrder.push(...(forward ? roundOrder : roundOrder.reverse()));
-    forward = !forward;
-  }
-
-  if (currentPick >= draftOrder.length) currentPick = 0;
-
-  updateCurrentPickDisplay();
-  saveAll();
-  renderTable();
 }
 
 function updateCurrentPickDisplay() {
@@ -427,101 +557,7 @@ function updateCurrentPickDisplay() {
   currentPickDisplay.textContent = `Pick ${currentPick + 1} - ${teamName}`;
 }
 
-function toggleDrafted(id) {
-  const player = players.find(p => p.id === id);
-  if (!player) return;
-
-  if (!player.drafted) {
-    if (currentPick >= draftOrder.length) {
-      alert("All picks completed!");
-      return;
-    }
-    player.drafted = true;
-    const teamIndex = draftOrder[currentPick];
-    player.draftedBy = teamNames[teamIndex];
-    player.pickNumber = currentPick + 1;
-    currentPick++;
-  } else {
-    if (player.pickNumber === currentPick) {
-      player.drafted = false;
-      player.draftedBy = null;
-      player.pickNumber = null;
-      currentPick--;
-    } else if (player.pickNumber < currentPick) {
-      alert("You can only undo the most recent pick.");
-      return;
-    }
-  }
-
-  updateCurrentPickDisplay();
-  saveAll();
-  renderTable();
-}
-
-function saveAll() {
-  localStorage.setItem("players", JSON.stringify(players));
-  localStorage.setItem("teamNames", JSON.stringify(teamNames));
-  localStorage.setItem("draftOrder", JSON.stringify(draftOrder));
-  localStorage.setItem("currentPick", currentPick);
-  localStorage.setItem("myTeamIndex", myTeamIndex);
-  localStorage.setItem("teamCount", teamCountSelect.value);
-  localStorage.setItem("yourTeamSelect", yourTeamSelect.value);
-  localStorage.setItem("tierBreaks", JSON.stringify(tierBreaks));
-}
-
-function loadAll() {
-  const storedPlayers = localStorage.getItem("players");
-  if (storedPlayers) players = JSON.parse(storedPlayers);
-
-  const storedTeamNames = localStorage.getItem("teamNames");
-  if (storedTeamNames) teamNames = JSON.parse(storedTeamNames);
-
-  const storedDraftOrder = localStorage.getItem("draftOrder");
-  if (storedDraftOrder) draftOrder = JSON.parse(storedDraftOrder);
-
-  const storedCurrentPick = localStorage.getItem("currentPick");
-  if (storedCurrentPick) currentPick = parseInt(storedCurrentPick, 10);
-
-  const storedMyTeamIndex = localStorage.getItem("myTeamIndex");
-  if (storedMyTeamIndex) myTeamIndex = parseInt(storedMyTeamIndex, 10);
-
-  const storedTeamCount = localStorage.getItem("teamCount");
-  if (storedTeamCount) teamCountSelect.value = storedTeamCount;
-  else teamCountSelect.value = "10";
-
-  generateTeamNameInputs();
-
-  for (let i = 0; i < teamNames.length; i++) {
-    const input = document.getElementById(`teamName${i}`);
-    if (input) input.value = teamNames[i] || "";
-  }
-
-  syncYourTeamSelectOptions();
-
-  if (myTeamIndex >= 0 && yourTeamSelect.querySelector(`option[value="${myTeamIndex}"]`)) {
-    yourTeamSelect.value = myTeamIndex;
-    myPickSelect.innerHTML = "";
-    const option = document.createElement("option");
-    option.value = myTeamIndex + 1;
-    option.textContent = myTeamIndex + 1;
-    myPickSelect.appendChild(option);
-    myPickSelect.value = option.value;
-    myPickSelect.disabled = true;
-    startDraftBtn.disabled = false;
-  } else {
-    yourTeamSelect.value = "";
-    myTeamIndex = -1;
-    myPickSelect.innerHTML = "";
-    myPickSelect.disabled = true;
-    startDraftBtn.disabled = true;
-  }
-
-  const storedTierBreaks = localStorage.getItem("tierBreaks");
-  if (storedTierBreaks) tierBreaks = JSON.parse(storedTierBreaks);
-  else tierBreaks = [];
-}
-
-// --- INIT ---
+// ---- INIT ----
 populateTeamCountOptions();
 generateTeamNameInputs();
 loadAll();
