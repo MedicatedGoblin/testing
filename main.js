@@ -36,14 +36,16 @@ function getVisiblePlayers() {
   });
 }
 
+// UPDATED: Place Tier 1 above first row, never moves; other tiers get arrows and can move in bounds
 function renderTable() {
   const visiblePlayers = getVisiblePlayers();
-  if (!Array.isArray(tierBreaks) || tierBreaks[tierBreaks.length - 1] !== visiblePlayers.length) {
+  if (!Array.isArray(tierBreaks) || tierBreaks.length === 0 || tierBreaks[tierBreaks.length - 1] !== visiblePlayers.length) {
     tierBreaks = getTierBreaks(visiblePlayers.length);
   }
-  tierBreaks = tierBreaks.filter((b, i, arr) =>
-    b > 0 && b <= visiblePlayers.length && (i === 0 || b > arr[i - 1])
-  );
+  // Clean tier breaks
+  tierBreaks = tierBreaks
+    .filter((b, i, arr) => b > 0 && b <= visiblePlayers.length && (i === 0 || b > arr[i - 1]))
+    .sort((a, b) => a - b);
   if (tierBreaks[tierBreaks.length - 1] !== visiblePlayers.length) {
     tierBreaks[tierBreaks.length - 1] = visiblePlayers.length;
   }
@@ -54,9 +56,10 @@ function renderTable() {
   document.getElementById("myWR").innerHTML = "";
   document.getElementById("myTE").innerHTML = "";
 
-  let tierNum = 1;
+  let tierNum = 1, playerIdx = 0;
   for (let i = 0; i <= visiblePlayers.length; i++) {
     if (tierBreaks.includes(i) && i !== 0) {
+      // Insert thin tier divider (Tier 1 will only be at i=0 below header)
       const tr = document.createElement("tr");
       tr.className = "tier-divider-tr";
       const td = document.createElement("td");
@@ -72,24 +75,33 @@ function renderTable() {
       label.className = "tier-divider-label";
       label.textContent = `Tier ${tierNum}`;
 
-      // Up arrow
-      const upArrow = document.createElement("button");
-      upArrow.textContent = "▲";
-      upArrow.className = "tier-arrow";
-      upArrow.disabled = (tierNum === 1);
-      upArrow.onclick = () => moveTier(tierNum - 1, -1);
+      // Add arrows for tiers except Tier 1
+      if (tierNum > 1) {
+        // Up arrow
+        const upArrow = document.createElement("button");
+        upArrow.textContent = "▲";
+        upArrow.className = "tier-arrow";
+        // Can't move above previous break + 1
+        upArrow.disabled = (tierBreaks[tierNum - 2] + 1 >= tierBreaks[tierNum - 1]);
+        upArrow.onclick = () => moveTier(tierNum - 1, -1);
 
-      // Down arrow
-      const downArrow = document.createElement("button");
-      downArrow.textContent = "▼";
-      downArrow.className = "tier-arrow";
-      downArrow.disabled = (tierNum === tierBreaks.length);
-      downArrow.onclick = () => moveTier(tierNum - 1, 1);
+        // Down arrow
+        const downArrow = document.createElement("button");
+        downArrow.textContent = "▼";
+        downArrow.className = "tier-arrow";
+        // Can't move below next break - 1 or past the last player
+        downArrow.disabled = (
+          tierNum === tierBreaks.length ||
+          tierBreaks[tierNum - 1] + 1 >= tierBreaks[tierNum] ||
+          tierBreaks[tierNum - 1] >= visiblePlayers.length - 1
+        );
+        downArrow.onclick = () => moveTier(tierNum - 1, 1);
 
+        bar.appendChild(upArrow);
+        bar.appendChild(downArrow);
+      }
       bar.appendChild(barInner);
       bar.appendChild(label);
-      bar.appendChild(upArrow);
-      bar.appendChild(downArrow);
 
       td.appendChild(bar);
       tr.appendChild(td);
@@ -97,6 +109,7 @@ function renderTable() {
       tierNum++;
     }
     if (i < visiblePlayers.length) {
+      // Player row
       const player = visiblePlayers[i];
       const tr = document.createElement("tr");
       tr.classList.add(player.position);
@@ -151,21 +164,22 @@ function renderTable() {
   }
 }
 
-function moveTier(index, direction) {
-  if (index < 0 || index >= tierBreaks.length) return;
-  const newBreaks = [...tierBreaks];
-  const targetIndex = index + direction;
-  if (targetIndex < 0 || targetIndex >= tierBreaks.length) return;
-  // Swap
-  const temp = newBreaks[index];
-  newBreaks[index] = newBreaks[targetIndex];
-  newBreaks[targetIndex] = temp;
-  newBreaks.sort((a, b) => a - b);
-  tierBreaks = newBreaks;
+// Move a tier up/down (index in tierBreaks; 0 = Tier 1, never moves)
+function moveTier(tierIdx, direction) {
+  if (tierIdx <= 0 || tierIdx >= tierBreaks.length) return;
+  const visiblePlayers = getVisiblePlayers();
+  const minPos = tierBreaks[tierIdx - 1] + 1;
+  const maxPos = (tierIdx === tierBreaks.length - 1)
+    ? visiblePlayers.length - 1
+    : tierBreaks[tierIdx + 0] - 1;
+  let newPos = tierBreaks[tierIdx] + direction;
+  if (newPos < minPos || newPos > maxPos) return;
+  tierBreaks[tierIdx] = newPos;
+  tierBreaks = tierBreaks.slice().sort((a, b) => a - b);
   renderTable();
 }
 
-// --- All your original logic below ---
+// ----- The rest of your original logic -----
 
 function handleFileSubmit() {
   if (!fileInput.files.length) {
