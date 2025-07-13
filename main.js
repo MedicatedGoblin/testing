@@ -1,3 +1,5 @@
+console.log("main.js loaded!"); // Diagnostic marker
+
 let players = [];
 let currentFilter = "ALL";
 let draftOrder = [];
@@ -45,17 +47,16 @@ function renderTable() {
     !Array.isArray(tierBreaks) ||
     tierBreaks.length === 0
   ) {
-    tierBreaks = getTierBreaks(visiblePlayers.length);
+    tierBreaks = getTierBreaks(players.length); // Important: use all players, not visible players
     console.log("RESET tierBreaks!", tierBreaks);
   }
 
-  // Clean breaks
+  // Clean breaks: Only ensure no negatives and increasing order.
   tierBreaks = tierBreaks
-    .filter((b, i, arr) => b > 0 && b <= visiblePlayers.length && (i === 0 || b > arr[i-1]))
+    .filter((b, i, arr) => b > 0 && (i === 0 || b > arr[i-1]))
     .sort((a, b) => a - b);
-  if (tierBreaks[tierBreaks.length-1] !== visiblePlayers.length) {
-    tierBreaks[tierBreaks.length-1] = visiblePlayers.length;
-  }
+
+  // Do NOT forcibly set last break to visiblePlayers.length!
 
   // Clear
   tableBody.innerHTML = "";
@@ -99,7 +100,7 @@ function renderTable() {
         const downArrow = document.createElement("button");
         downArrow.textContent = "▼";
         downArrow.className = "tier-arrow";
-        const maxDown = (tierNum === tierBreaks.length) ? visiblePlayers.length : tierBreaks[tierNum];
+        const maxDown = (tierNum === tierBreaks.length) ? players.length : tierBreaks[tierNum];
         downArrow.disabled = (tierBreaks[tierNum - 1] >= maxDown - 1);
         downArrow.onclick = () => moveTier(tierNum - 1, 1);
 
@@ -175,10 +176,9 @@ function renderTable() {
 
 function moveTier(tierIdx, direction) {
   console.log("moveTier CALLED", tierIdx, direction, JSON.stringify(tierBreaks));
-  const visiblePlayers = getVisiblePlayers();
   if (tierIdx <= 0 || tierIdx >= tierBreaks.length) return;
   const prevBreak = tierBreaks[tierIdx - 1];
-  const nextBreak = (tierIdx === tierBreaks.length - 1) ? visiblePlayers.length : tierBreaks[tierIdx + 1];
+  const nextBreak = (tierIdx === tierBreaks.length - 1) ? players.length : tierBreaks[tierIdx + 1];
   let newPos = tierBreaks[tierIdx] + direction;
   if (newPos <= prevBreak || newPos >= nextBreak) return;
   tierBreaks[tierIdx] = newPos;
@@ -224,7 +224,7 @@ function handleFileSubmit() {
 
     currentPick = 0;
     draftOrder = [];
-    tierBreaks = null;
+    tierBreaks = getTierBreaks(players.length); // <-- Initialize for new player list!
     saveAll();
     renderTable();
     updateCurrentPickDisplay();
@@ -239,7 +239,7 @@ function removePlayerFile() {
   players = [];
   draftOrder = [];
   currentPick = 0;
-  tierBreaks = null;
+  tierBreaks = getTierBreaks(0);
   saveAll();
   renderTable();
   updateCurrentPickDisplay();
@@ -471,6 +471,7 @@ function resetAll() {
   startDraftBtn.disabled = true;
   localStorage.clear();
   generateTeamNameInputs();
+  tierBreaks = getTierBreaks(players.length); // Re-init for empty
   renderTable();
   updateCurrentPickDisplay();
   clearFileInput();
