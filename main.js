@@ -1,3 +1,5 @@
+console.log("main.js loaded! (player tier model, 5 per tier)");
+
 let players = [];
 let currentFilter = "ALL";
 let draftOrder = [];
@@ -5,7 +7,7 @@ let currentPick = 0;
 let teamNames = [];
 let myTeamIndex = -1;
 
-const NUM_TIERS = 5; // Change to 8 for 8 tiers
+const NUM_TIERS = 5; // 5 tiers
 
 const fileInput = document.getElementById("fileInput");
 const submitFileBtn = document.getElementById("submitFileBtn");
@@ -172,10 +174,8 @@ function handleFileSubmit() {
   reader.onload = e => {
     const lines = e.target.result.split("\n").filter(line => line.trim());
 
-    // ----- CUSTOM TIER BREAKS HERE -----
-    // For 5 tiers: 1-10, 11-15, 16-20, 21-25, 26+
-    // For 8 tiers: const breaks = [5, 10, 15, 20, 25, 30, 35];
-    const breaks = [10, 15, 20, 25]; // 1-indexed: these are the LAST index for each tier (Tier 1: 1-10, Tier 2: 11-15, etc)
+    // --- 5 players per tier: [4, 9, 14, 19] (indexes) ---
+    const breaks = [4, 9, 14, 19];
 
     players = lines.map((line, index) => {
       const parts = line.trim().split(/\s+/);
@@ -191,7 +191,7 @@ function handleFileSubmit() {
       // Assign tier by index
       let tier = 1;
       for (let i = 0; i < breaks.length; i++) {
-        if (index >= breaks[i]) tier++;
+        if (index > breaks[i]) tier++;
       }
       if (tier > NUM_TIERS) tier = NUM_TIERS;
       return {
