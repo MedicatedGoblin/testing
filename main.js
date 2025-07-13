@@ -1,5 +1,3 @@
-console.log("main.js loaded!"); // Debug marker
-
 let players = [];
 let currentFilter = "ALL";
 let draftOrder = [];
