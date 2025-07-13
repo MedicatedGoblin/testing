@@ -165,6 +165,7 @@ function renderTable() {
 }
 
 function moveTier(tierIdx, direction) {
+  console.log("moveTier CALLED", tierIdx, direction, JSON.stringify(tierBreaks));
   // tierIdx: 1 = second divider, etc
   const visiblePlayers = getVisiblePlayers();
   if (tierIdx <= 0 || tierIdx >= tierBreaks.length) return;
