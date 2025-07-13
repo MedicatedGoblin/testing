@@ -1,4 +1,3 @@
-console.log("New main.js loaded!");
 let players = [];
 let currentFilter = "ALL";
 let draftOrder = [];
@@ -8,7 +7,7 @@ let myTeamIndex = -1;
 
 // Number of breaks (e.g., [1,5,10,15,20,25])
 const NUM_TIERS = 6;
-let tierBreaks = [];
+let tierBreaks = null;
 
 const fileInput = document.getElementById("fileInput");
 const submitFileBtn = document.getElementById("submitFileBtn");
@@ -22,6 +21,7 @@ const startDraftBtn = document.getElementById("startDraftBtn");
 const currentPickDisplay = document.getElementById("currentPickDisplay");
 const teamNamesContainer = document.getElementById("teamNames");
 
+// Utility for default tier breaks
 function getTierBreaks(numPlayers) {
   let breaks = [1, 5, 10, 15, 20, 25].filter(b => b <= numPlayers);
   if (!breaks.includes(numPlayers)) breaks.push(numPlayers);
@@ -40,15 +40,16 @@ function getVisiblePlayers() {
 
 function renderTable() {
   const visiblePlayers = getVisiblePlayers();
-  if (!Array.isArray(tierBreaks) || tierBreaks.length === 0 || tierBreaks[tierBreaks.length - 1] !== visiblePlayers.length) {
+  // Only reset tierBreaks if player list length changed or breaks are invalid
+  if (!Array.isArray(tierBreaks) || (tierBreaks.length === 0) || (tierBreaks[tierBreaks.length-1] !== visiblePlayers.length)) {
     tierBreaks = getTierBreaks(visiblePlayers.length);
   }
-  // Clean and sort
+  // Clean tierBreaks (monotonic, in bounds)
   tierBreaks = tierBreaks
-    .filter((b, i, arr) => b > 0 && b <= visiblePlayers.length && (i === 0 || b > arr[i - 1]))
+    .filter((b, i, arr) => b > 0 && b <= visiblePlayers.length && (i === 0 || b > arr[i-1]))
     .sort((a, b) => a - b);
-  if (tierBreaks[tierBreaks.length - 1] !== visiblePlayers.length) {
-    tierBreaks[tierBreaks.length - 1] = visiblePlayers.length;
+  if (tierBreaks[tierBreaks.length-1] !== visiblePlayers.length) {
+    tierBreaks[tierBreaks.length-1] = visiblePlayers.length;
   }
 
   tableBody.innerHTML = "";
@@ -59,10 +60,9 @@ function renderTable() {
 
   let tierNum = 1;
   let tierBreakIdx = 0;
-
   for (let i = 0; i <= visiblePlayers.length; i++) {
+    // Insert divider above first player and at each tier break
     if (i === 0 || (tierBreakIdx < tierBreaks.length && i === tierBreaks[tierBreakIdx])) {
-      // Insert tier divider row
       const tr = document.createElement("tr");
       tr.className = "tier-divider-tr";
       const td = document.createElement("td");
@@ -176,7 +176,7 @@ function moveTier(tierIdx, direction) {
   renderTable();
 }
 
-// -- File/player/team logic from your working version --
+// ---- Your unchanged draft/team logic below ----
 
 function handleFileSubmit() {
   if (!fileInput.files.length) {
