@@ -331,64 +331,50 @@ tbody tr {
   }
 }
 
-/* --- DYNAMIC TIERS & BUTTONS --- */
-.plus-row-td {
-  background: #f8f9fa;
+/* --- TIER DIVIDER SYSTEM, COMPACT --- */
+.plus-cell {
+  width: 30px;
   text-align: center;
-  padding: 4px 0;
-}
-.plus-divider-btn {
-  background: #eee;
-  border: 1.5px solid #bbb;
-  border-radius: 50%;
-  color: #1976d2;
-  font-weight: bold;
-  font-size: 1.15em;
-  width: 26px;
-  height: 26px;
-  cursor: pointer;
-  margin: 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: background .18s, box-shadow .18s;
-}
-.plus-divider-btn:hover {
-  background: #cde1fd;
-  box-shadow: 0 2px 6px #1976d233;
+  padding: 0 !important;
+  background: none !important;
+  vertical-align: middle !important;
 }
 
-/* ---- COMPACT TIER DIVIDER ROW ---- */
+.plus-btn {
+  background: #f5f7fa;
+  color: #1976d2;
+  border: 1.2px solid #aac7ed;
+  border-radius: 50%;
+  font-weight: bold;
+  font-size: 0.95em;
+  width: 20px;
+  height: 20px;
+  line-height: 18px;
+  padding: 0;
+  cursor: pointer;
+  margin: 0;
+  display: inline-block;
+  transition: background 0.13s, box-shadow 0.18s;
+}
+.plus-btn:hover {
+  background: #cde1fd;
+  border-color: #1976d2;
+}
+
 .tier-divider-tr {
-  height: 16px !important;
+  background: #f3f8fd !important;
+  height: 18px !important;
 }
 .tier-divider-td {
-  padding: 0 !important;
-  background: #f8fafd;
-}
-.tier-divider-bar {
-  display: flex;
-  align-items: center;
-  height: 14px;
-  margin: 0;
-  padding: 0;
-}
-.tier-divider-bar-inner {
-  width: 90%;
-  height: 3.5px;
-  background: #1976d2;
-  border-radius: 6px;
-  margin-right: 6px;
-  box-shadow: 0 1px 3px #1976d233;
-}
-.tier-divider-label {
-  margin-left: 2px;
-  font-weight: 800;
+  text-align: left;
+  padding: 0 0 0 8px !important;
+  font-size: 0.8em;
   color: #1976d2;
-  font-size: 0.67em;
+  font-weight: 800;
   letter-spacing: 0.5px;
-  line-height: 1;
-  padding: 0 3px;
+  border-left: 3px solid #1976d2;
+  background: #f3f8fd !important;
+  height: 18px;
 }
 .remove-tier-btn {
   margin-left: 6px;
@@ -396,7 +382,7 @@ tbody tr {
   background: #fcecec;
   border: 1px solid #ffdadb;
   border-radius: 7px;
-  font-size: 0.8em;
+  font-size: 0.85em;
   font-weight: bold;
   width: 15px;
   height: 15px;
@@ -404,6 +390,7 @@ tbody tr {
   padding: 0;
   cursor: pointer;
   transition: background .13s, box-shadow .18s;
+  vertical-align: middle;
 }
 .remove-tier-btn:hover {
   background: #ffd6d6;
