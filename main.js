@@ -1,3 +1,4 @@
+// Your full 300 players array goes here (replace with your actual players)
 const players = [
   { id: 1, name: "Ja'Marr Chase", tag: "WR1", position: "WR", drafted: false, draftedBy: null, pickNumber: null },
   { id: 2, name: "Bijan Robinson", tag: "RB1", position: "RB", drafted: false, draftedBy: null, pickNumber: null },
@@ -99,7 +100,7 @@ const players = [
   { id: 98, name: "Mark Andrews", tag: "TE8", position: "TE", drafted: false, draftedBy: null, pickNumber: null },
   { id: 99, name: "Evan Engram", tag: "TE9", position: "TE", drafted: false, draftedBy: null, pickNumber: null },
   { id: 100, name: "Tyrone Tracy Jr.", tag: "RB34", position: "RB", drafted: false, draftedBy: null, pickNumber: null },
-    { id: 101, name: "Cam Skattebo", tag: "RB35", position: "RB", drafted: false, draftedBy: null, pickNumber: null },
+  { id: 101, name: "Cam Skattebo", tag: "RB35", position: "RB", drafted: false, draftedBy: null, pickNumber: null },
   { id: 102, name: "J.K. Dobbins", tag: "RB36", position: "RB", drafted: false, draftedBy: null, pickNumber: null },
   { id: 103, name: "Zach Charbonnet", tag: "RB37", position: "RB", drafted: false, draftedBy: null, pickNumber: null },
   { id: 104, name: "Colston Loveland", tag: "TE10", position: "TE", drafted: false, draftedBy: null, pickNumber: null },
@@ -301,136 +302,52 @@ const players = [
   { id: 300, name: "Jeremy Ruckert", tag: "TE50", position: "TE", drafted: false, draftedBy: null, pickNumber: null },
 ];
 
-
-// ====================
-// FULL main.js - complete
-// Replace the player array content ONLY where indicated
-// ====================
-
-// ----------- Player List -----------
-// Replace ONLY the array contents (between [ ... ]) here with your full player list.
-let players = [
-  // { id: 1, name: "Ja'Marr Chase", tag: "WR1", position: "WR", drafted: false, draftedBy: null, pickNumber: null },
-  // { id: 2, name: "Bijan Robinson", tag: "RB1", position: "RB", drafted: false, draftedBy: null, pickNumber: null },
-  // ...
-  // Paste your full 300-player list here, each player as an object like above.
-];
-
-// ----------- Global Variables -----------
-
-let currentFilter = "ALL";
+// Globals
 let draftOrder = [];
 let currentPick = 0;
 let teamNames = [];
 let myTeamIndex = -1;
 
-// Default tier breaks; you can adjust if needed
-const tierBreaksDefault = [5, 10, 15, 20, 25];
-let tierBreaks = [...tierBreaksDefault];
+// Tier breaks as indexes between players
+const NUM_TIERS = 6;
+let tierBreaks = [5, 10, 15, 20, 25, 300]; // default: 5 players per tier approx
 
-// ----------- DOM Elements -----------
-
-const tableBody = document.getElementById("tierTableBody") || document.querySelector("#playerTable tbody");
-const searchInput = document.getElementById("searchInput");
+// DOM elements
+const tableBody = document.getElementById("tierTableBody");
 const teamCountSelect = document.getElementById("teamCount");
 const yourTeamSelect = document.getElementById("yourTeamSelect");
 const myPickSelect = document.getElementById("myPickIndex");
 const startDraftBtn = document.getElementById("startDraftBtn");
 const currentPickDisplay = document.getElementById("currentPickDisplay");
 const teamNamesContainer = document.getElementById("teamNames");
+const searchInput = document.getElementById("searchInput");
+const hidePickedCheckbox = document.getElementById("hidePickedCheckbox");
+const editButton = document.getElementById("editButton");
 
-// ----------- Utility Functions -----------
+let isEditing = false;
 
 function getVisiblePlayers() {
-  const keyword = searchInput?.value.toLowerCase() || "";
-  const hidePicked = document.getElementById("hidePickedCheckbox")?.checked || false;
+  const keyword = searchInput.value.toLowerCase();
+  const hidePicked = hidePickedCheckbox.checked;
   return players.filter(player => {
-    const matchesFilter = currentFilter === "ALL" || player.position === currentFilter;
     const matchesSearch = player.name.toLowerCase().includes(keyword);
-    return matchesFilter && matchesSearch && (!hidePicked || !player.drafted);
+    return matchesSearch && (!hidePicked || !player.drafted);
   });
 }
 
-function saveAll() {
-  localStorage.setItem("players", JSON.stringify(players));
-  localStorage.setItem("tierBreaks", JSON.stringify(tierBreaks));
-  localStorage.setItem("teamNames", JSON.stringify(teamNames));
-  localStorage.setItem("currentPick", currentPick);
-  localStorage.setItem("myTeamIndex", myTeamIndex);
-  localStorage.setItem("teamCount", teamCountSelect?.value || "10");
-  localStorage.setItem("yourTeamSelect", yourTeamSelect?.value || "");
-}
-
-function loadAll() {
-  const storedPlayers = localStorage.getItem("players");
-  if (storedPlayers) players = JSON.parse(storedPlayers);
-
-  const storedTierBreaks = localStorage.getItem("tierBreaks");
-  if (storedTierBreaks) tierBreaks = JSON.parse(storedTierBreaks);
-  else tierBreaks = [...tierBreaksDefault];
-
-  const storedTeamNames = localStorage.getItem("teamNames");
-  if (storedTeamNames) teamNames = JSON.parse(storedTeamNames);
-
-  const storedCurrentPick = localStorage.getItem("currentPick");
-  if (storedCurrentPick) currentPick = parseInt(storedCurrentPick, 10);
-
-  const storedMyTeamIndex = localStorage.getItem("myTeamIndex");
-  if (storedMyTeamIndex) myTeamIndex = parseInt(storedMyTeamIndex, 10);
-
-  if (teamCountSelect) {
-    const storedTeamCount = localStorage.getItem("teamCount");
-    if (storedTeamCount) teamCountSelect.value = storedTeamCount;
-    else teamCountSelect.value = "10";
-  }
-}
-
-function updateCurrentPickDisplay() {
-  if (currentPick >= draftOrder.length) {
-    currentPickDisplay.textContent = "Draft Complete!";
-    startDraftBtn.disabled = true;
-    return;
-  }
-  const teamIndex = draftOrder[currentPick];
-  const teamName = teamNames[teamIndex] || "";
-  currentPickDisplay.textContent = `Pick ${currentPick + 1} - ${teamName}`;
-}
-
-function toggleDrafted(id) {
-  const player = players.find(p => p.id === id);
-  if (!player) return;
-
-  if (!player.drafted) {
-    if (currentPick >= draftOrder.length) {
-      alert("All picks completed!");
-      return;
-    }
-    player.drafted = true;
-    const teamIndex = draftOrder[currentPick];
-    player.draftedBy = teamNames[teamIndex];
-    player.pickNumber = currentPick + 1;
-    currentPick++;
-  } else {
-    if (player.pickNumber === currentPick) {
-      player.drafted = false;
-      player.draftedBy = null;
-      player.pickNumber = null;
-      currentPick--;
-    } else if (player.pickNumber < currentPick) {
-      alert("You can only undo the most recent pick.");
-      return;
-    }
-  }
-
-  updateCurrentPickDisplay();
-  saveAll();
-  renderTable();
-}
-
-// ----------- Rendering Function -----------
-
 function renderTable() {
   const visiblePlayers = getVisiblePlayers();
+
+  // Validate and fix tierBreaks length and order
+  if (!Array.isArray(tierBreaks) || tierBreaks.length !== NUM_TIERS) {
+    tierBreaks = [5, 10, 15, 20, 25, visiblePlayers.length];
+  }
+  // Ensure sorted and valid
+  tierBreaks = tierBreaks.filter(b => b > 0 && b <= visiblePlayers.length).sort((a,b) => a-b);
+  if (tierBreaks[tierBreaks.length-1] !== visiblePlayers.length) {
+    tierBreaks[tierBreaks.length-1] = visiblePlayers.length;
+  }
+
   tableBody.innerHTML = "";
   document.getElementById("myQB").innerHTML = "";
   document.getElementById("myRB").innerHTML = "";
@@ -438,88 +355,142 @@ function renderTable() {
   document.getElementById("myTE").innerHTML = "";
 
   let tierNum = 1;
-  for (let i = 0; i <= visiblePlayers.length; i++) {
-    if (tierBreaks.includes(i) && i !== 0) {
-      const tr = document.createElement("tr");
-      tr.className = "tier-divider-tr";
-      tr.dataset.tierIndex = tierNum;
-      const td = document.createElement("td");
-      td.className = "tier-divider-td";
-      td.colSpan = 5;
+  let nextBreakIndex = 0;
 
-      const bar = document.createElement("div");
-      bar.className = "tier-divider-bar";
-      const label = document.createElement("span");
-      label.className = "tier-divider-label";
-      label.textContent = `Tier ${tierNum}`;
-      bar.appendChild(label);
-      td.appendChild(bar);
-      tr.appendChild(td);
-      tableBody.appendChild(tr);
+  for (let i = 0; i < visiblePlayers.length; i++) {
+    if (nextBreakIndex < tierBreaks.length && i === tierBreaks[nextBreakIndex]) {
+      // Insert tier divider
+      const trTier = document.createElement("tr");
+      trTier.className = "tier-divider-tr";
+
+      const tdTier = document.createElement("td");
+      tdTier.colSpan = 5;
+      tdTier.className = "tier-divider-td";
+      tdTier.textContent = `Tier ${tierNum}`;
+
+      trTier.appendChild(tdTier);
+      tableBody.appendChild(trTier);
+
       tierNum++;
+      nextBreakIndex++;
     }
-    if (i < visiblePlayers.length) {
-      const player = visiblePlayers[i];
-      const tr = document.createElement("tr");
-      tr.classList.add(player.position);
-      if (player.drafted) tr.classList.add("strikethrough");
-      if (player.draftedBy === teamNames[myTeamIndex]) tr.classList.add("highlight");
-      if (player.pickNumber === currentPick && player.draftedBy !== teamNames[myTeamIndex]) tr.classList.add("recent-pick");
-      tr.addEventListener("dblclick", () => {
-        toggleDrafted(player.id);
-      });
 
-      const cbCell = document.createElement("td");
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.checked = player.drafted;
-      cb.dataset.id = player.id;
-      cb.addEventListener("change", () => {
-        toggleDrafted(player.id);
-      });
-      cbCell.appendChild(cb);
+    const player = visiblePlayers[i];
+    const tr = document.createElement("tr");
+    tr.classList.add(player.position);
+    if (player.drafted) tr.classList.add("strikethrough");
+    if (player.draftedBy === teamNames[myTeamIndex]) tr.classList.add("highlight");
+    if (player.pickNumber === currentPick && player.draftedBy !== teamNames[myTeamIndex]) tr.classList.add("recent-pick");
 
-      const numCell = document.createElement("td");
-      numCell.textContent = player.id;
+    // Double click to draft toggle
+    tr.addEventListener("dblclick", () => toggleDrafted(player.id));
 
-      const nameCell = document.createElement("td");
-      nameCell.textContent = player.name;
-      if (tr.classList.contains("recent-pick")) {
-        const pickNumberBox = document.createElement("span");
-        pickNumberBox.className = "pick-number-box";
-        pickNumberBox.textContent = `Pick ${player.pickNumber}`;
-        nameCell.appendChild(pickNumberBox);
-      }
+    // Checkbox cell
+    const cbCell = document.createElement("td");
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = player.drafted;
+    cb.disabled = !isEditing;
+    cb.dataset.id = player.id;
+    cb.addEventListener("change", () => toggleDrafted(player.id));
+    cbCell.appendChild(cb);
 
-      const posCell = document.createElement("td");
-      posCell.textContent = player.position;
+    // Player ID cell
+    const idCell = document.createElement("td");
+    idCell.textContent = player.id;
 
-      const draftedByCell = document.createElement("td");
-      draftedByCell.textContent = player.draftedBy || "";
+    // Name cell
+    const nameCell = document.createElement("td");
+    nameCell.textContent = player.name;
+    if (tr.classList.contains("recent-pick")) {
+      const pickNumberBox = document.createElement("span");
+      pickNumberBox.className = "pick-number-box";
+      pickNumberBox.textContent = `Pick ${player.pickNumber}`;
+      nameCell.appendChild(pickNumberBox);
+    }
 
-      tr.appendChild(cbCell);
-      tr.appendChild(numCell);
-      tr.appendChild(nameCell);
-      tr.appendChild(posCell);
-      tr.appendChild(draftedByCell);
+    // Position cell
+    const posCell = document.createElement("td");
+    posCell.textContent = player.position;
 
-      tableBody.appendChild(tr);
+    // Drafted By cell
+    const draftedByCell = document.createElement("td");
+    draftedByCell.textContent = player.draftedBy || "";
 
-      // Add to My Picks lists
-      if (player.draftedBy === teamNames[myTeamIndex]) {
-        const li = document.createElement("li");
-        li.textContent = `${player.name} (${player.tag})`;
-        document.getElementById("my" + player.position).appendChild(li);
-      }
+    tr.appendChild(cbCell);
+    tr.appendChild(idCell);
+    tr.appendChild(nameCell);
+    tr.appendChild(posCell);
+    tr.appendChild(draftedByCell);
+
+    tableBody.appendChild(tr);
+
+    // Add to "My picks" lists if drafted by me
+    if (player.draftedBy === teamNames[myTeamIndex]) {
+      const li = document.createElement("li");
+      li.textContent = `${player.name} (${player.tag})`;
+      document.getElementById("my" + player.position).appendChild(li);
     }
   }
 }
 
-// ----------- Team Setup Functions -----------
+function toggleDrafted(playerId) {
+  const player = players.find(p => p.id === playerId);
+  if (!player) return;
+  player.drafted = !player.drafted;
+  if (player.drafted) {
+    currentPick++;
+    player.pickNumber = currentPick;
+    player.draftedBy = teamNames[myTeamIndex] || "N/A";
+  } else {
+    player.pickNumber = null;
+    player.draftedBy = null;
+  }
+  saveAll();
+  renderTable();
+  updateCurrentPickDisplay();
+}
+
+function updateCurrentPickDisplay() {
+  currentPickDisplay.textContent = `Current Pick: ${currentPick}`;
+}
+
+function saveAll() {
+  const state = {
+    players,
+    draftOrder,
+    currentPick,
+    teamNames,
+    myTeamIndex,
+    tierBreaks
+  };
+  localStorage.setItem("fantasyDraftState", JSON.stringify(state));
+}
+
+function loadAll() {
+  const stateStr = localStorage.getItem("fantasyDraftState");
+  if (!stateStr) return false;
+  try {
+    const state = JSON.parse(stateStr);
+    if (!state) return false;
+    if (Array.isArray(state.players)) {
+      // Restore players but preserve object refs to keep event listeners consistent
+      players.length = 0;
+      state.players.forEach(p => players.push(p));
+    }
+    draftOrder = state.draftOrder || [];
+    currentPick = state.currentPick || 0;
+    teamNames = state.teamNames || [];
+    myTeamIndex = typeof state.myTeamIndex === 'number' ? state.myTeamIndex : -1;
+    tierBreaks = state.tierBreaks || tierBreaks;
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function populateTeamCountOptions() {
-  const options = [10, 8, 12, 14];
-  if (!teamCountSelect) return;
+  const options = [8, 10, 12, 14];
   teamCountSelect.innerHTML = "";
   options.forEach(num => {
     const option = document.createElement("option");
@@ -530,7 +501,6 @@ function populateTeamCountOptions() {
 }
 
 function generateTeamNameInputs() {
-  if (!teamCountSelect || !teamNamesContainer) return;
   const teamCount = parseInt(teamCountSelect.value, 10);
   teamNamesContainer.innerHTML = "";
   for (let i = 0; i < teamCount; i++) {
@@ -543,7 +513,6 @@ function generateTeamNameInputs() {
       teamNames[i] = input.value.trim();
       syncYourTeamSelectOptions();
       saveAll();
-      validateStartDraftButton();
     });
     teamNamesContainer.appendChild(input);
     teamNamesContainer.appendChild(document.createElement("br"));
@@ -551,12 +520,9 @@ function generateTeamNameInputs() {
 }
 
 function syncYourTeamSelectOptions() {
-  if (!yourTeamSelect) return;
   const prevValue = yourTeamSelect.value;
   yourTeamSelect.innerHTML = '<option value="" disabled selected>-- Select Team --</option>';
-  teamNames = teamNames.map(name => name.trim());
   const teamCount = parseInt(teamCountSelect.value, 10);
-
   for (let i = 0; i < teamCount; i++) {
     const name = teamNames[i] || "";
     if (name) {
@@ -566,7 +532,6 @@ function syncYourTeamSelectOptions() {
       yourTeamSelect.appendChild(option);
     }
   }
-
   if (!yourTeamSelect.querySelector(`option[value="${prevValue}"]`)) {
     yourTeamSelect.value = "";
     myTeamIndex = -1;
@@ -585,9 +550,12 @@ function syncYourTeamSelectOptions() {
       myPickSelect.disabled = true;
     }
   }
+  saveAll();
+  renderTable();
+  updateCurrentPickDisplay();
 }
 
-yourTeamSelect?.addEventListener("change", () => {
+yourTeamSelect.addEventListener("change", () => {
   const val = yourTeamSelect.value;
   if (val === "") {
     myTeamIndex = -1;
@@ -605,153 +573,47 @@ yourTeamSelect?.addEventListener("change", () => {
   }
   saveAll();
   renderTable();
-  validateStartDraftButton();
+  updateCurrentPickDisplay();
 });
 
-teamCountSelect?.addEventListener("change", () => {
+teamCountSelect.addEventListener("change", () => {
   saveAll();
   generateTeamNameInputs();
   syncYourTeamSelectOptions();
-  validateStartDraftButton();
 });
 
-// ----------- Validation -----------
-
-function validateStartDraftButton() {
-  let valid = true;
-
-  if (teamCountSelect) {
-    // Validate team names
-    const teamCount = parseInt(teamCountSelect.value, 10);
-    for (let i = 0; i < teamCount; i++) {
-      const input = document.getElementById(`teamName${i}`);
-      if (!input || input.value.trim() === "") {
-        input?.classList.add("error");
-        valid = false;
-      } else {
-        input.classList.remove("error");
-      }
-    }
-  }
-
-  if (!yourTeamSelect || yourTeamSelect.value === "") {
-    yourTeamSelect?.classList.add("error");
-    valid = false;
-  } else {
-    yourTeamSelect?.classList.remove("error");
-  }
-
-  if (!players || players.length === 0) valid = false;
-
-  startDraftBtn.disabled = !valid;
-}
-
-// ----------- Draft Setup -----------
-
-function setupDraft() {
-  validateStartDraftButton();
-  if (startDraftBtn.disabled) {
-    alert("Please fix the highlighted errors before starting the draft.");
-    return;
-  }
-
-  const namesSet = new Set();
-  for (const name of teamNames) {
-    if (!name) {
-      alert("All teams must have a name.");
-      return;
-    }
-    if (namesSet.has(name.toLowerCase())) {
-      alert("Team names must be unique.");
-      return;
-    }
-    namesSet.add(name.toLowerCase());
-  }
-
-  const teamCount = parseInt(teamCountSelect.value, 10);
-  draftOrder = [];
-  let forward = true;
-  for (let round = 0; round < 20; round++) {
-    const roundOrder = Array.from({ length: teamCount }, (_, i) => i);
-    draftOrder.push(...(forward ? roundOrder : roundOrder.reverse()));
-    forward = !forward;
-  }
-
-  if (currentPick >= draftOrder.length) currentPick = 0;
-
-  updateCurrentPickDisplay();
-  saveAll();
+searchInput.addEventListener("input", () => {
   renderTable();
-}
+});
 
-// ----------- Player Movement -----------
-
-function movePlayer(id, direction) {
-  const idx = players.findIndex(p => p.id === id);
-  if (idx < 0) return;
-
-  const newIndex = idx + direction;
-  if (newIndex < 0 || newIndex >= players.length) return;
-
-  // Swap players
-  [players[idx], players[newIndex]] = [players[newIndex], players[idx]];
-
-  // Update their ids for display
-  players.forEach((p, i) => p.id = i + 1);
-
-  saveAll();
+hidePickedCheckbox.addEventListener("change", () => {
   renderTable();
-}
+});
 
-// ----------- Tier Movement -----------
-
-function moveTier(tierIndex, direction) {
-  const tierPos = tierBreaks.indexOf(tierIndex);
-  if (tierPos === -1) return;
-
-  const newPos = tierPos + direction;
-  if (newPos < 0 || newPos >= tierBreaks.length) return;
-
-  // Swap tiers
-  [tierBreaks[tierPos], tierBreaks[newPos]] = [tierBreaks[newPos], tierBreaks[tierPos]];
-  tierBreaks.sort((a,b) => a - b);
-
-  saveAll();
+editButton.addEventListener("click", () => {
+  isEditing = !isEditing;
+  editButton.textContent = isEditing ? "Done Editing" : "Edit";
   renderTable();
-}
+});
 
-// ----------- Initialization -----------
-
-function clearFileInput() {
-  // No file input now — no-op
-}
-
-populateTeamCountOptions();
-generateTeamNameInputs();
-loadAll();
-renderTable();
-updateCurrentPickDisplay();
-validateStartDraftButton();
-
-startDraftBtn?.addEventListener("click", setupDraft);
-searchInput?.addEventListener("input", renderTable);
-
+// ESPN Sync
 window.addEventListener("message", (event) => {
   if (event.source !== window) return;
   if (event.data?.type === "DRAFTED_PLAYERS") {
     const picks = event.data.payload;
     picks.forEach(pickedName => {
-      const rows = document.querySelectorAll("#playerTable tbody tr");
-      for (const row of rows) {
-        const nameCell = row.cells[2];
-        if (nameCell && nameCell.textContent.trim().toLowerCase().includes(pickedName.toLowerCase())) {
-          const checkbox = row.querySelector("input[type='checkbox']");
-          if (checkbox && !checkbox.checked) {
-            checkbox.click();
-          }
-          break;
-        }
+      const player = players.find(p => p.name.toLowerCase() === pickedName.toLowerCase());
+      if (player && !player.drafted) {
+        toggleDrafted(player.id);
       }
     });
   }
 });
+
+// Initialize
+populateTeamCountOptions();
+generateTeamNameInputs();
+loadAll();
+renderTable();
+updateCurrentPickDisplay();
+syncYourTeamSelectOptions();
