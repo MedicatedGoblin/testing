@@ -340,3 +340,37 @@ tbody tr {
   }
 }
 
+/* --- FantasyPros-Style Tier Divider Styles --- */
+.tier-divider {
+  background: #1976d2;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.01em;
+  border: none;
+  text-align: left;
+  padding: 6px 14px;
+  border-radius: 0 !important;
+  box-shadow: none;
+  cursor: grab;
+  user-select: none;
+  letter-spacing: 0.02em;
+  border-top: 2px solid #1565c0;
+  border-bottom: 2px solid #1565c0;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.tier-divider.dragging {
+  opacity: 0.7;
+  background: #1976d2;
+  box-shadow: 0 2px 12px #1976d2aa;
+}
+.tier-divider-drop-target {
+  background: #e3f2fd !important;
+  box-shadow: 0 4px 0 0 #1976d2;
+}
+.tier-divider-placeholder {
+  height: 14px;
+  background: linear-gradient(90deg, #1976d2 60%, #fff 100%);
+  border: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
