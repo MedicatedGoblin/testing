@@ -28,17 +28,7 @@ h2, h3 {
   min-width: 120px;
 }
 
-input[type="file"] {
-  border: 2px solid #ddd;
-  padding: 0.4rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: border-color 0.3s ease;
-}
-input[type="file"]:hover,
-input[type="file"]:focus {
-  border-color: #007bff;
-}
+/* File upload input styling removed */
 
 button {
   background-color: #007bff;
@@ -260,7 +250,6 @@ input[type="checkbox"]:hover {
 button,
 input[type="text"],
 select,
-input[type="file"],
 tbody tr {
   transition: all 0.3s ease;
 }
@@ -325,10 +314,6 @@ tbody tr {
   th:nth-child(6),
   td:nth-child(6) {
     max-width: 120px;
-  }
-  th:nth-child(4),
-  td:nth-child(4) {
-    display: none;
   }
 }
 
@@ -475,4 +460,15 @@ tbody tr {
   color: #aaa;
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* --- Mobile horizontal scroll for table --- */
+@media (max-width: 600px) {
+  .table-wrapper {
+    overflow-x: auto;
+    width: 100%;
+  }
+  table {
+    min-width: 600px;
+  }
 }
