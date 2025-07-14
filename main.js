@@ -1,6 +1,6 @@
 // --------- Fantasy Draft Board Tier & Player Logic ---------
 
-let players = []; // Now provided directly in index.html
+let players = [];
 let currentFilter = "ALL";
 let draftOrder = [];
 let currentPick = 0;
@@ -12,7 +12,9 @@ let editingTiers = false;
 let addingTierMode = false;
 let addTierIdx = null;
 
-// File upload elements REMOVED
+const fileInput = document.getElementById("fileInput");
+const submitFileBtn = document.getElementById("submitFileBtn");
+const removeFileBtn = document.getElementById("removeFileBtn");
 const searchInput = document.getElementById("searchInput");
 const tableBody = document.querySelector("#playerTable tbody");
 const teamCountSelect = document.getElementById("teamCount");
@@ -364,6 +366,8 @@ teamCountSelect.addEventListener("change", () => {
 
 function validateStartDraftButton() {
   let valid = true;
+  fileInput.classList.remove("error");
+  submitFileBtn.classList.remove("error");
   startDraftBtn.classList.remove("error");
   yourTeamSelect.classList.remove("error");
 
@@ -388,7 +392,12 @@ function validateStartDraftButton() {
     yourTeamSelect.classList.remove("error");
   }
   if (players.length === 0) {
+    fileInput.classList.add("error");
+    submitFileBtn.classList.add("error");
     valid = false;
+  } else {
+    fileInput.classList.remove("error");
+    submitFileBtn.classList.remove("error");
   }
   startDraftBtn.disabled = !valid;
 }
@@ -553,6 +562,71 @@ function resetAll() {
   generateTeamNameInputs();
   renderTable();
   updateCurrentPickDisplay();
+  clearFileInput();
+}
+
+function handleFileSubmit() {
+  if (!fileInput.files.length) {
+    alert("Please select a player file before submitting.");
+    fileInput.classList.add("error");
+    return;
+  }
+  fileInput.classList.remove("error");
+
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.split("\n").filter(line => line.trim());
+    players = lines.map((line, index) => {
+      const parts = line.trim().split(/\s+/);
+      const tag = parts.pop();
+      const name = parts.join(" ");
+      let position = "OTHER";
+      if (tag) {
+        if (tag.includes("RB")) position = "RB";
+        else if (tag.includes("WR")) position = "WR";
+        else if (tag.includes("QB")) position = "QB";
+        else if (tag.includes("TE")) position = "TE";
+      }
+      return {
+        id: index + 1,
+        name,
+        tag,
+        position,
+        drafted: false,
+        draftedBy: null,
+        pickNumber: null,
+      };
+    }).filter(p => p.name && p.tag);
+
+    currentPick = 0;
+    draftOrder = [];
+    tierBreaks = [];
+    saveAll();
+    renderTable();
+    updateCurrentPickDisplay();
+
+    removeFileBtn.disabled = false;
+    validateStartDraftButton();
+  };
+  reader.readAsText(file);
+}
+
+function removePlayerFile() {
+  players = [];
+  draftOrder = [];
+  currentPick = 0;
+  tierBreaks = [];
+  saveAll();
+  renderTable();
+  updateCurrentPickDisplay();
+  clearFileInput();
+  removeFileBtn.disabled = true;
+  validateStartDraftButton();
+}
+
+function clearFileInput() {
+  fileInput.value = "";
 }
 
 // --------- INIT -----------
@@ -563,7 +637,14 @@ renderTable();
 updateCurrentPickDisplay();
 validateStartDraftButton();
 
+submitFileBtn.addEventListener("click", handleFileSubmit);
+removeFileBtn.addEventListener("click", removePlayerFile);
 searchInput.addEventListener("input", renderTable);
+fileInput.addEventListener("change", () => {
+  fileInput.classList.remove("error");
+  submitFileBtn.classList.remove("error");
+  validateStartDraftButton();
+});
 
 window.addEventListener("message", (event) => {
   if (event.source !== window) return;
