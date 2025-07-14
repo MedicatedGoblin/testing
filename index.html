@@ -8,19 +8,17 @@
 </head>
 <body>
   <h2>Fantasy Draft Board</h2>
-  <div class="controls">
-    <!-- File upload controls removed -->
+
+  <!-- Controls and edit buttons unified above the table -->
+  <div class="controls" style="margin-bottom: 0.7rem;">
     <input type="text" id="searchInput" placeholder="Search players..." />
     <button onclick="filterByPosition('ALL')">ALL</button>
     <button onclick="filterByPosition('RB')">RB</button>
     <button onclick="filterByPosition('WR')">WR</button>
     <button onclick="filterByPosition('QB')">QB</button>
     <button onclick="filterByPosition('TE')">TE</button>
-    <label><input type="checkbox" id="hidePickedCheckbox" onchange="renderTable()" /> Hide Picked</label>
+    <label style="white-space:nowrap;"><input type="checkbox" id="hidePickedCheckbox" onchange="renderTable()" /> Hide Picked</label>
     <button onclick="resetAll()">Reset All</button>
-  </div>
-
-  <div class="edit-toolbar">
     <button id="editTiersBtn">Edit</button>
     <button id="doneTiersBtn" style="display:none;">Done</button>
     <button id="addTierModeBtn" style="display:none;">Add Tier</button>
