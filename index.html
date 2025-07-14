@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <!-- Key for FantasyPros look: -->
   <meta name="viewport" content="width=375, user-scalable=no">
   <title>Fantasy Draft Board</title>
   <link rel="stylesheet" href="style.css" />
@@ -35,9 +34,11 @@
     <div><strong>RB</strong><ul id="myRB"></ul></div>
     <div><strong>WR</strong><ul id="myWR"></ul></div>
     <div><strong>TE</strong><ul id="myTE"></ul></div>
+    <div><strong>K</strong><ul id="myK"></ul></div>
+    <div><strong>DST</strong><ul id="myDST"></ul></div>
   </div>
 
-  <!-- The main controls above the table now use .big-mobile-btn for mobile sizing -->
+  <!-- Main filter/action buttons above the table, including K and DST -->
   <div class="controls" style="margin-bottom: 0.7rem;">
     <input type="text" id="searchInput" placeholder="Search players..." />
     <button class="big-mobile-btn" onclick="filterByPosition('ALL')">ALL</button>
@@ -45,6 +46,8 @@
     <button class="big-mobile-btn" onclick="filterByPosition('WR')">WR</button>
     <button class="big-mobile-btn" onclick="filterByPosition('QB')">QB</button>
     <button class="big-mobile-btn" onclick="filterByPosition('TE')">TE</button>
+    <button class="big-mobile-btn" onclick="filterByPosition('K')">K</button>
+    <button class="big-mobile-btn" onclick="filterByPosition('DST')">DST</button>
     <label style="white-space:nowrap;">
       <input type="checkbox" id="hidePickedCheckbox" onchange="renderTable()" /> Hide Picked
     </label>
