@@ -418,7 +418,7 @@ tbody tr {
   cursor: not-allowed;
 }
 
-/* --- Ultra-compact on mobile like FantasyPros --- */
+/* --- Ultra-compact on mobile like FantasyPros + Big Buttons for .big-mobile-btn --- */
 @media (max-width: 600px) {
   html, body {
     font-size: 11px !important;
@@ -444,6 +444,16 @@ tbody tr {
     border-radius: 3px !important;
     min-width: unset !important;
     height: auto !important;
+  }
+  /* BIG filter/action buttons */
+  .big-mobile-btn {
+    font-size: 18px !important;
+    padding: 10px 0 !important;
+    min-width: 100% !important;
+    border-radius: 10px !important;
+    margin-bottom: 8px !important;
+    box-sizing: border-box;
+    font-weight: 600 !important;
   }
   .controls, .controls > * {
     font-size: 11px !important;
