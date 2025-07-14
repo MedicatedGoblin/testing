@@ -590,7 +590,8 @@ function renderTable() {
   document.getElementById("myRB").innerHTML = "";
   document.getElementById("myWR").innerHTML = "";
   document.getElementById("myTE").innerHTML = "";
-
+document.getElementById("myK").innerHTML = "";
+document.getElementById("myDST").innerHTML = "";
   for (let t = 0; t < tierBreaks.length - 1; t++) {
     // ---- Slim blue tier line ----
     let tierLabel = `Tier ${t + 1}`;
