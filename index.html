@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Key for FantasyPros look: -->
+  <meta name="viewport" content="width=375, user-scalable=no">
   <title>Fantasy Draft Board</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -51,22 +52,20 @@
     <button id="cancelAddTierBtn" style="display:none;">Cancel Add</button>
   </div>
 
-  <!-- Table wrapped for horizontal scroll on mobile, NO features or styles changed -->
-  <div class="table-scroll">
-    <table id="playerTable">
-      <thead>
-        <tr>
-          <th>✔</th>
-          <th>#</th>
-          <th></th>
-          <th>Name</th>
-          <th>Position</th>
-          <th>Drafted By</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+  <table id="playerTable">
+    <thead>
+      <tr>
+        <th>✔</th>
+        <th>#</th>
+        <th></th>
+        <th>Name</th>
+        <th>Position</th>
+        <th>Drafted By</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
   <script src="main.js"></script>
 </body>
 </html>
