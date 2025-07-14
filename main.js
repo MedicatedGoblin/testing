@@ -537,7 +537,6 @@ let players = [
   { id: 533, name: "Eric Gray", tag: "533", position: "RB150", drafted: false, draftedBy: null, pickNumber: null },
   { id: 534, name: "Bo Melton", tag: "534", position: "WR180", drafted: false, draftedBy: null, pickNumber: null },
   { id: 535, name: "Trent Sherfield Sr.", tag: "535", position: "WR181", drafted: false, draftedBy: null, pickNumber: null },
-];
   // ...add more players as needed, matching your old file format
 ];
 
