@@ -424,13 +424,72 @@ tbody tr {
   cursor: not-allowed;
 }
 
-/* --- Mobile: Only enable horizontal scroll, NO styling/layout changes! --- */
-@media (max-width: 800px) {
-  .table-scroll {
-    overflow-x: auto;
-    width: 100%;
+/* --- Mobile: FantasyPros style ultra-compact view --- */
+@media (max-width: 600px) {
+  /* Table and cells */
+  #playerTable, .my-picks div, .controls, .controls > * {
+    font-size: 11px !important;
   }
-  #playerTable {
-    min-width: 950px;
+  th, td {
+    padding: 3px 4px !important;
+    font-size: 11px !important;
+  }
+
+  /* Buttons and inputs */
+  button, .controls button, .controls > button {
+    font-size: 11px !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    min-width: unset !important;
+    height: auto !important;
+  }
+  input[type="text"], select, #searchInput {
+    font-size: 11px !important;
+    padding: 4px 6px !important;
+    min-width: 40px !important;
+  }
+
+  /* Checkbox shrink */
+  input[type="checkbox"] {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  /* My picks compact */
+  .my-picks div {
+    padding: 4px 6px !important;
+    min-width: 80px !important;
+    max-width: 120px !important;
+  }
+  .my-picks ul li {
+    font-size: 11px !important;
+    margin-bottom: 2px !important;
+  }
+
+  /* Tighten up controls */
+  .controls {
+    gap: 0.4rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* Shrink tier divider label and controls */
+  .tier-divider-label {
+    font-size: 11px !important;
+    padding: 2px 8px 2px 6px !important;
+    height: 16px !important;
+    min-width: 40px !important;
+  }
+  .tier-divider-controls button {
+    width: 16px !important;
+    height: 16px !important;
+    font-size: 10px !important;
+    margin-left: 1px !important;
+  }
+  .add-tier-plus {
+    width: 16px !important;
+    height: 16px !important;
+    font-size: 11px !important;
+    left: 8px !important;
+    top: -6px !important;
   }
 }
