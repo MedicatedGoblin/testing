@@ -36,7 +36,7 @@
     <div><strong>TE</strong><ul id="myTE"></ul></div>
   </div>
 
-  <!-- TABLE CONTROLS & EDIT BUTTONS NOW APPEAR HERE, right above the table -->
+  <!-- Controls and edit buttons unified above the table -->
   <div class="controls" style="margin-bottom: 0.7rem;">
     <input type="text" id="searchInput" placeholder="Search players..." />
     <button onclick="filterByPosition('ALL')">ALL</button>
@@ -52,19 +52,22 @@
     <button id="cancelAddTierBtn" style="display:none;">Cancel Add</button>
   </div>
 
-  <table id="playerTable">
-    <thead>
-      <tr>
-        <th>✔</th>
-        <th>#</th>
-        <th></th>
-        <th>Name</th>
-        <th>Position</th>
-        <th>Drafted By</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <!-- Table is now wrapped for mobile horizontal scroll -->
+  <div class="table-wrapper">
+    <table id="playerTable">
+      <thead>
+        <tr>
+          <th>✔</th>
+          <th>#</th>
+          <th></th>
+          <th>Name</th>
+          <th>Position</th>
+          <th>Drafted By</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
   <script src="main.js"></script>
 </body>
 </html>
